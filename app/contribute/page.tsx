@@ -48,6 +48,7 @@ export default function ContributePage() {
   const [pageSize, setPageSize] = useState(15)
   const [loadingWords, setLoadingWords] = useState(false)
   const [lexemeApiError, setLexemeApiError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
 
   // Load missing audio lexemes when language/page/pageSize changes (after step 1)
   useEffect(() => {
@@ -73,8 +74,10 @@ export default function ContributePage() {
             id: item.lexeme_id,
             word: item.lemma,
             hasAudio: false,
-            hasLabel: false,
+            hasLabel: Boolean(item.categoryLabel),
+            label: item.categoryLabel,
             language: language.lang_code,
+            _fromApi: true,
           }))
         : []
       setWordList(mapped)
@@ -88,7 +91,7 @@ export default function ContributePage() {
 
   // Handle language selection (step 1)
   const handleLanguageSelect = (langCode: string) => {
-    const lang = languages.find((l) => l.lang_code === langCode) || null
+    const lang = languages.find((l: Language) => l.lang_code === langCode) || null
     setSelectedLanguage(lang)
   }
 
@@ -125,6 +128,32 @@ export default function ContributePage() {
       setWordList((prev) => [...prev, ...mapped])
     } catch (err: any) {
       setLexemeApiError(err.message || "Failed to search lexemes")
+    }
+  }
+
+  // Search handler for SearchInput in EnhancedWordListManager
+  const handleWordSearch = async (query: string) => {
+    if (!selectedLanguage || !query.trim()) return
+    try {
+      const results: LexemeSearchResult[] = await searchLexemes({
+        ismatch: 0,
+        search: query,
+        src_lang: selectedLanguage.lang_code,
+      })
+      // Add new results to wordList if not already present
+      const newWords: LexemeWord[] = results
+        .filter((item: LexemeSearchResult) => !wordList.some((w) => w.id === item.id))
+        .map((item: LexemeSearchResult) => ({
+          id: item.id,
+          word: item.label,
+          hasAudio: false,
+          hasLabel: Boolean(item.description),
+          label: item.description,
+          language: selectedLanguage.lang_code,
+        }))
+      if (newWords.length > 0) setWordList((prev) => [...prev, ...newWords])
+    } catch (err) {
+      // Optionally handle error
     }
   }
 
@@ -200,6 +229,9 @@ export default function ContributePage() {
               words={wordList}
               onWordsChange={setWordList}
               onOpenWikimediaModal={() => setIsWikimediaModalOpen(true)}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onSearch={handleWordSearch}
             />
           </div>
         )

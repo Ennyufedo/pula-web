@@ -24,6 +24,7 @@ import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
 import { BulkLabelOperations } from "./bulk-label-operations"
 import { validateLabel, getQualityBadgeColor } from "@/utils/label-validation"
+import SearchInput from "@/components/search-input"
 
 interface LexemeWord {
   id: string
@@ -33,6 +34,7 @@ interface LexemeWord {
   audioBlob?: Blob
   label?: string
   language: string
+  _fromApi?: boolean // Added for API-sourced words
 }
 
 interface EnhancedWordListManagerProps {
@@ -41,86 +43,8 @@ interface EnhancedWordListManagerProps {
   onOpenWikimediaModal: () => void
 }
 
-// Dummy data with only incomplete items
-const generateDummyWords = (): LexemeWord[] => [
-  {
-    id: "1",
-    word: "Educational consultant",
-    hasAudio: false,
-    hasLabel: true,
-    label: "A professional who provides expert advice on educational matters",
-    language: "en",
-  },
-  {
-    id: "2",
-    word: "End of studies collage",
-    hasAudio: false,
-    hasLabel: false,
-    language: "en",
-  },
-  {
-    id: "3",
-    word: "Language barrier",
-    hasAudio: true,
-    hasLabel: false,
-    language: "en",
-  },
-  {
-    id: "4",
-    word: "Life Study",
-    hasAudio: false,
-    hasLabel: false,
-    language: "en",
-  },
-  {
-    id: "5",
-    word: "Mississippi Miracle",
-    hasAudio: false,
-    hasLabel: true,
-    label: "Educational reform initiative in Mississippi",
-    language: "en",
-  },
-  {
-    id: "6",
-    word: "Newcomer education",
-    hasAudio: false,
-    hasLabel: true,
-    label: "Educational programs for new immigrants",
-    language: "en",
-  },
-  {
-    id: "7",
-    word: "Prison education",
-    hasAudio: true,
-    hasLabel: false,
-    language: "en",
-  },
-  {
-    id: "8",
-    word: "Social work management",
-    hasAudio: false,
-    hasLabel: false,
-    language: "en",
-  },
-  {
-    id: "9",
-    word: "Organites",
-    hasAudio: false,
-    hasLabel: true,
-    label: "Small specialized structures within cells",
-    language: "en",
-  },
-  {
-    id: "10",
-    word: "Social-emotional learning",
-    hasAudio: true,
-    hasLabel: false,
-    language: "en",
-  },
-]
 
-export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaModal }: EnhancedWordListManagerProps) {
-  const [inputValue, setInputValue] = useState("")
+export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaModal, searchQuery, setSearchQuery, onSearch }: EnhancedWordListManagerProps & { searchQuery: string, setSearchQuery: (v: string) => void, onSearch: (v: string) => void }) {
   const [showWordGenerators, setShowWordGenerators] = useState(false)
   const [isBulkOperationsOpen, setIsBulkOperationsOpen] = useState(false)
 
@@ -130,36 +54,7 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
   const [modalEditingWord, setModalEditingWord] = useState<LexemeWord | null>(null)
 
   // Filter to only show incomplete words
-  const incompleteWords = words.filter((word) => !word.hasAudio || !word.hasLabel)
-
-  const handleAddWords = () => {
-    if (!inputValue.trim()) return
-
-    const newWords = inputValue
-      .split("#")
-      .map((word) => word.trim())
-      .filter((word) => word.length > 0)
-      .filter((word) => !words.find((w) => w.word === word))
-      .map((word, index) => ({
-        id: `new-${Date.now()}-${index}`,
-        word,
-        hasAudio: false,
-        hasLabel: false,
-        language: "en",
-      }))
-
-    if (newWords.length > 0) {
-      onWordsChange([...words, ...newWords])
-      setInputValue("")
-    }
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      e.preventDefault()
-      handleAddWords()
-    }
-  }
+  const incompleteWords = words.filter((word: LexemeWord) => !word.hasAudio || !word.hasLabel)
 
   const handleDeleteWord = (id: string) => {
     const newWords = words.filter((w) => w.id !== id)
@@ -168,10 +63,6 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
 
   const handleClearAll = () => {
     onWordsChange([])
-  }
-
-  const handleLoadDummyData = () => {
-    onWordsChange(generateDummyWords())
   }
 
   const handleShareList = () => {
@@ -188,11 +79,6 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
     const needsBoth = incompleteWords.filter((w) => !w.hasAudio && !w.hasLabel).length
 
     return { total, needsAudio, needsLabel, needsBoth }
-  }
-
-  const handleStartEditLabel = (word: LexemeWord) => {
-    setEditingLabelId(word.id)
-    setEditingLabelValue(word.label || "")
   }
 
   const handleSaveLabel = (wordId: string) => {
@@ -218,12 +104,6 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
     setEditingLabelValue("")
   }
 
-  const handleOpenLabelModal = (word: LexemeWord) => {
-    setModalEditingWord(word)
-    setEditingLabelValue(word.label || "")
-    setIsLabelModalOpen(true)
-  }
-
   const handleSaveLabelModal = () => {
     if (modalEditingWord) {
       const validation = validateLabel(editingLabelValue)
@@ -238,6 +118,18 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
     setIsLabelModalOpen(false)
     setModalEditingWord(null)
     setEditingLabelValue("")
+  }
+
+  // Restore handleStartEditLabel and handleOpenLabelModal for editable labels
+  const handleStartEditLabel = (word: LexemeWord) => {
+    setEditingLabelId(word.id)
+    setEditingLabelValue(word.label || "")
+  }
+
+  const handleOpenLabelModal = (word: LexemeWord) => {
+    setModalEditingWord(word)
+    setEditingLabelValue(word.label || "")
+    setIsLabelModalOpen(true)
   }
 
   const stats = getWordStats()
@@ -258,33 +150,20 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
             <Users className="w-4 h-4 mr-2" />
             Bulk Operations
           </Button>
-          <Button onClick={handleLoadDummyData} variant="outline" size="sm">
-            Load Sample Data
-          </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100%-6rem)]">
         {/* Main word list area */}
         <div className="lg:col-span-2 flex flex-col space-y-4">
-          {/* Input Section */}
+          {/* Search Bar Section */}
           <div className="bg-blue-50 p-4 rounded-lg">
-            <div className="flex gap-2 mb-3">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Type here the lexeme to contribute to"
-                className="flex-1 h-12 text-base focus:ring-2 focus:ring-blue-500"
-              />
-              <Button onClick={handleAddWords} disabled={!inputValue.trim()} className="h-12 px-4">
-                <Plus className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>Add lexemes that need audio recordings or labels. You can contribute both audio and text labels.</p>
-              <p>To add several words at once, separate them with #, for example "big#house#orange".</p>
-            </div>
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              onSearch={onSearch}
+              disabled={false}
+            />
           </div>
 
           {/* Word List Display */}
@@ -293,13 +172,14 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
               <div className="bg-white border border-gray-200 rounded-lg h-full flex flex-col">
                 <div className="p-4 border-b border-gray-100">
                   <h3 className="font-medium text-gray-900">Lexemes Needing Contributions</h3>
-                  <p className="text-sm text-gray-500 mt-1">Only showing items that need audio or labels</p>
+                  {/* <p className="text-sm text-gray-500 mt-1">Only showing items that need audio or labels</p> */}
                 </div>
                 <div className="flex-1 overflow-y-auto">
                   <div className="divide-y divide-gray-100">
                     {incompleteWords.map((word) => {
-                      const validation = word.label ? validateLabel(word.label) : null
-
+                      // If the word has a label from categoryLabel, show it as dim text and do not allow editing
+                      const isApiLabel = word.label && word._fromApi === true
+                      const validation = !isApiLabel && word.label ? validateLabel(word.label) : null
                       return (
                         <div key={word.id} className="p-4 hover:bg-gray-50 transition-colors group">
                           <div className="flex items-start justify-between">
@@ -321,112 +201,117 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
                                   )}
                                 </div>
                               </div>
-
-                              {/* Label editing section */}
-                              {word.hasLabel && (
-                                <div className="mt-2">
-                                  {editingLabelId === word.id ? (
-                                    <div className="space-y-2">
-                                      <Input
-                                        value={editingLabelValue}
-                                        onChange={(e) => setEditingLabelValue(e.target.value)}
-                                        placeholder="Enter label or definition"
-                                        className="text-sm"
-                                        autoFocus
-                                      />
-                                      {editingLabelValue && (
-                                        <div className="flex items-center gap-2">
-                                          {(() => {
-                                            const liveValidation = validateLabel(editingLabelValue)
-                                            return (
-                                              <>
-                                                <Badge className={getQualityBadgeColor(liveValidation.score)}>
-                                                  Quality: {liveValidation.score}%
-                                                </Badge>
-                                                {liveValidation.errors.length > 0 && (
-                                                  <Badge variant="destructive" className="text-xs">
-                                                    <AlertTriangle className="w-3 h-3 mr-1" />
-                                                    {liveValidation.errors.length} errors
+                              {/* Show label as dim text if from API, else allow editing */}
+                              {word.hasLabel && word.label && (
+                                isApiLabel ? (
+                                  <div className="mt-2">
+                                    <p className="text-sm text-gray-400 italic">{word.label}</p>
+                                  </div>
+                                ) : (
+                                  // ... existing editable label logic ...
+                                  <div className="mt-2">
+                                    {editingLabelId === word.id ? (
+                                      <div className="space-y-2">
+                                        <Input
+                                          value={editingLabelValue}
+                                          onChange={(e) => setEditingLabelValue(e.target.value)}
+                                          placeholder="Enter label or definition"
+                                          className="text-sm"
+                                          autoFocus
+                                        />
+                                        {editingLabelValue && (
+                                          <div className="flex items-center gap-2">
+                                            {(() => {
+                                              const liveValidation = validateLabel(editingLabelValue)
+                                              return (
+                                                <>
+                                                  <Badge className={getQualityBadgeColor(liveValidation.score)}>
+                                                    Quality: {liveValidation.score}%
                                                   </Badge>
-                                                )}
-                                                {liveValidation.warnings.length > 0 && (
-                                                  <Badge variant="outline" className="text-xs text-yellow-600">
-                                                    {liveValidation.warnings.length} warnings
-                                                  </Badge>
-                                                )}
-                                              </>
-                                            )
-                                          })()}
-                                        </div>
-                                      )}
-                                      <div className="flex gap-2">
-                                        <Button
-                                          size="sm"
-                                          onClick={() => handleSaveLabel(word.id)}
-                                          disabled={!editingLabelValue.trim()}
-                                        >
-                                          Save
-                                        </Button>
-                                        <Button size="sm" variant="outline" onClick={handleCancelEditLabel}>
-                                          Cancel
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <div className="flex items-start gap-2 group/label">
-                                      <div className="flex-1">
-                                        <p className="text-sm text-gray-600">{word.label}</p>
-                                        {validation && (
-                                          <div className="flex items-center gap-2 mt-1">
-                                            <Badge className={getQualityBadgeColor(validation.score)}>
-                                              {validation.score}%
-                                            </Badge>
-                                            {validation.errors.length > 0 && (
-                                              <Badge variant="destructive" className="text-xs">
-                                                <AlertTriangle className="w-3 h-3 mr-1" />
-                                                {validation.errors.length}
-                                              </Badge>
-                                            )}
-                                            {validation.warnings.length > 0 && (
-                                              <Badge variant="outline" className="text-xs text-yellow-600">
-                                                {validation.warnings.length}
-                                              </Badge>
-                                            )}
-                                            {validation.isValid && validation.score >= 80 && (
-                                              <Badge variant="outline" className="text-xs text-green-600">
-                                                <CheckCircle className="w-3 h-3 mr-1" />
-                                                Good
-                                              </Badge>
-                                            )}
+                                                  {liveValidation.errors.length > 0 && (
+                                                    <Badge variant="destructive" className="text-xs">
+                                                      <AlertTriangle className="w-3 h-3 mr-1" />
+                                                      {liveValidation.errors.length} errors
+                                                    </Badge>
+                                                  )}
+                                                  {liveValidation.warnings.length > 0 && (
+                                                    <Badge variant="outline" className="text-xs text-yellow-600">
+                                                      {liveValidation.warnings.length} warnings
+                                                    </Badge>
+                                                  )}
+                                                </>
+                                              )
+                                            })()}
                                           </div>
                                         )}
+                                        <div className="flex gap-2">
+                                          <Button
+                                            size="sm"
+                                            onClick={() => handleSaveLabel(word.id)}
+                                            disabled={!editingLabelValue.trim()}
+                                          >
+                                            Save
+                                          </Button>
+                                          <Button size="sm" variant="outline" onClick={handleCancelEditLabel}>
+                                            Cancel
+                                          </Button>
+                                        </div>
                                       </div>
-                                      <div className="opacity-0 group-hover/label:opacity-100 transition-opacity flex gap-1">
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleStartEditLabel(word)}
-                                          className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600"
-                                          title="Edit inline"
-                                        >
-                                          <Edit className="w-3 h-3" />
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          variant="ghost"
-                                          onClick={() => handleOpenLabelModal(word)}
-                                          className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600"
-                                          title="Edit in modal"
-                                        >
-                                          <ExternalLink className="w-3 h-3" />
-                                        </Button>
+                                    ) : (
+                                      <div className="flex items-start gap-2 group/label">
+                                        <div className="flex-1">
+                                          <p className="text-sm text-gray-600">{word.label}</p>
+                                          {validation && (
+                                            <div className="flex items-center gap-2 mt-1">
+                                              <Badge className={getQualityBadgeColor(validation.score)}>
+                                                {validation.score}%
+                                              </Badge>
+                                              {validation.errors.length > 0 && (
+                                                <Badge variant="destructive" className="text-xs">
+                                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                                  {validation.errors.length}
+                                                </Badge>
+                                              )}
+                                              {validation.warnings.length > 0 && (
+                                                <Badge variant="outline" className="text-xs text-yellow-600">
+                                                  {validation.warnings.length}
+                                                </Badge>
+                                              )}
+                                              {validation.isValid && validation.score >= 80 && (
+                                                <Badge variant="outline" className="text-xs text-green-600">
+                                                  <CheckCircle className="w-3 h-3 mr-1" />
+                                                  Good
+                                                </Badge>
+                                              )}
+                                            </div>
+                                          )}
+                                        </div>
+                                        <div className="opacity-0 group-hover/label:opacity-100 transition-opacity flex gap-1">
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleStartEditLabel(word)}
+                                            className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600"
+                                            title="Edit inline"
+                                          >
+                                            <Edit className="w-3 h-3" />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            onClick={() => handleOpenLabelModal(word)}
+                                            className="h-6 w-6 p-0 text-gray-400 hover:text-blue-600"
+                                            title="Edit in modal"
+                                          >
+                                            <ExternalLink className="w-3 h-3" />
+                                          </Button>
+                                        </div>
                                       </div>
-                                    </div>
-                                  )}
-                                </div>
+                                    )}
+                                  </div>
+                                )
                               )}
                             </div>
-
                             <Button
                               variant="ghost"
                               size="sm"
@@ -449,10 +334,6 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
                     <Plus className="w-8 h-8 text-gray-400" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 mb-2">No lexemes need work</h3>
-                  <p className="text-gray-500 mb-4">Add lexemes manually or use a word generator</p>
-                  <Button onClick={handleLoadDummyData} variant="outline">
-                    Load Sample Data
-                  </Button>
                 </div>
               </div>
             )}
@@ -460,14 +341,6 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
 
           {/* Action buttons */}
           <div className="flex gap-4">
-            <Button
-              variant="outline"
-              onClick={() => console.log("Remove completed")}
-              disabled={incompleteWords.length === 0}
-              className="flex-1 bg-gray-100 text-gray-700 hover:bg-gray-200"
-            >
-              Remove completed items
-            </Button>
             <Button
               variant="destructive"
               onClick={handleClearAll}
@@ -537,7 +410,7 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
             </div>
           )}
 
-          <Button
+          {/* <Button
             variant="outline"
             onClick={handleShareList}
             disabled={incompleteWords.length === 0}
@@ -545,7 +418,7 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
           >
             <Share2 className="w-4 h-4 mr-2" />
             Share List
-          </Button>
+          </Button> */}
         </div>
       </div>
 

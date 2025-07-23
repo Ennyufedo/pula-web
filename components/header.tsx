@@ -11,8 +11,8 @@ import type { AuthState } from '@/lib/stores/authStore';
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { login, logout } = useApiWithStore();
-  const token = useAuthStore((state: AuthState ) => state.token);
-  const hydrate = useAuthStore((state: AuthState ) => state.hydrate);
+  const token = useAuthStore(state => state.token);
+  const hydrate = useAuthStore(state => state.hydrate);
 
   useEffect(() => {
     hydrate();
