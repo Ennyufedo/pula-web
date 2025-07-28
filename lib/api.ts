@@ -126,7 +126,7 @@ class ApiClient {
    */
   async getLexemeDetails(request: LexemeDetailRequest): Promise<LexemeDetailResult> {
     try {
-      const response: AxiosResponse<LexemeDetailResult> = await this.client.post(`/lexemes/${request.id}`, request);
+      const response: AxiosResponse<LexemeDetailResult> = await this.client.post(`/lexemes/${request.id}/translations`, request);
       return response.data;
     } catch (error) {
       throw error as ApiError;
@@ -136,9 +136,9 @@ class ApiClient {
   /**
    * Add a labeled translation for a lexeme
    */
-  async addLabeledTranslation(request: AddLabeledTranslationRequest): Promise<void> {
+  async addLabeledTranslation(request: AddLabeledTranslationRequest[]): Promise<void> {
     try {
-      await this.client.post('/lexeme/translations', request);
+      await this.client.post('/lexeme/translations/add', request);
     } catch (error) {
       throw error as ApiError;
     }
@@ -213,7 +213,7 @@ export const api = {
   getLanguages: () => apiClient.getLanguages(),
   searchLexemes: (request: LexemeSearchRequest) => apiClient.searchLexemes(request),
   getLexemeDetails: (request: LexemeDetailRequest) => apiClient.getLexemeDetails(request),
-  addLabeledTranslation: (request: AddLabeledTranslationRequest) => apiClient.addLabeledTranslation(request),
+  addLabeledTranslation: (request: AddLabeledTranslationRequest[]) => apiClient.addLabeledTranslation(request),
   addAudioTranslation: (request: AddAudioTranslationRequest) => apiClient.addAudioTranslation(request),
   login: () => apiClient.login(),
   oauthCallback: (oauth_verifier: string, oauth_token: string) => apiClient.oauthCallback(oauth_verifier, oauth_token),
