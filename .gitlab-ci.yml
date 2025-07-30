@@ -82,6 +82,7 @@ build:
     - git log -1
     - git status
     - git push gitlab_origin $BRANCH --force
+    - echo "Restart service on Toolforge"
     # Restart service on Toolforge
     - |
       ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" <<EOF
@@ -123,7 +124,7 @@ deploy-dev:
   stage: deploy
   environment: dev
   variables:
-    SSH_HOST: "login.toolforge.org"
+    SSH_HOST: "login.tools.wmflabs.org"
     SSH_USER: "collins"
     TOOLNAME: $TOOLNAME
     BRANCH: build-dev
@@ -137,7 +138,7 @@ deploy-beta:
   stage: deploy
   environment: beta
   variables:
-    SSH_HOST: "login.toolforge.org"
+    SSH_HOST: "login.tools.wmflabs.org"
     SSH_USER: "collins"
     TOOLNAME: $TOOLNAME
     BRANCH: build-beta
@@ -151,7 +152,7 @@ deploy-production:
   stage: deploy
   environment: production
   variables:
-    SSH_HOST: "login.toolforge.org"
+    SSH_HOST: "login.tools.wmflabs.org"
     SSH_USER: "collins"
     TOOLNAME: $TOOLNAME
     BRANCH: build-production
