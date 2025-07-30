@@ -34,7 +34,7 @@ export default function ContributePage() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([])
   const [isWikimediaModalOpen, setIsWikimediaModalOpen] = useState(false)
   const [wordList, setWordList] = useState<WordListItem[]>([])
-  const [recordings, setRecordings] = useState<any[]>([])
+  const [recordings, setRecordings] = useState<RecordingData[]>([])
   const [selectedLanguage, setSelectedLanguage] = useState<LanguageData | null>(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(15)

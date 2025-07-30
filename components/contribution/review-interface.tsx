@@ -5,17 +5,8 @@ import { api } from "@/lib/api"
 import type { AddAudioTranslationRequest } from "@/lib/types/api"
 import { Button } from "@/components/ui/button"
 import { Play, Pause, Trash2, Download, Upload, Keyboard, X } from "lucide-react"
-
-interface RecordingData {
-  lexeme_id: string
-  formId: string
-  lemma: string
-  audioBlob?: Blob
-  isRecorded: boolean
-  duration?: number
-  lang_label: string
-  lang_wdqid: string
-}
+import { useApiWithStore } from "@/hooks/useApiWithStore";
+import type { RecordingData } from '@/types/recording'
 
 interface ReviewInterfaceProps {
   recordings: RecordingData[]
@@ -25,8 +16,11 @@ interface ReviewInterfaceProps {
 export function ReviewInterface({ recordings, onSubmit }: ReviewInterfaceProps) {
   const [playingIndex, setPlayingIndex] = useState<number | null>(null)
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const { addAudioTranslation } = useApiWithStore();
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
   const [audioElements] = useState<{ [key: number]: HTMLAudioElement }>({})
+  const [deletedIndices, setDeletedIndices] = useState<number[]>([])
+  const [selectedRecordings, setSelectedRecordings] = useState<number[]>([])
   const containerRef = useRef<HTMLDivElement | null>(null)
 
   const recordedItems = recordings.filter((r) => r.isRecorded)
@@ -158,8 +152,8 @@ export function ReviewInterface({ recordings, onSubmit }: ReviewInterfaceProps) 
     if (selectedIndex >= recordedItems.length - 1 && selectedIndex > 0) {
       setSelectedIndex(selectedIndex - 1)
     }
-    // Here you would update the recordings array
-    console.log("Delete recording at index:", index)
+    // Add index to deleted indices
+    setDeletedIndices(prev => [...prev, index])
   }
 
   const prepareAudioSubmission = (recording: RecordingData): Promise<AddAudioTranslationRequest | null> => {
@@ -185,21 +179,73 @@ export function ReviewInterface({ recordings, onSubmit }: ReviewInterfaceProps) 
 
   const handleSubmitRecordings = async () => {
     try {
-      const submissions = await Promise.all(
-        recordedItems
-          .filter(recording => recording.audioBlob)
-          .map(prepareAudioSubmission)
+      const toSubmit = recordedItems.filter((_, idx) => 
+        selectedRecordings.includes(idx) && !deletedIndices.includes(idx)
+      );
+      
+      if (toSubmit.length === 0) {
+        console.error('No recordings selected');
+        return;
+      }
+
+      const submissions: AddAudioTranslationRequest[] = await Promise.all(
+        toSubmit.map(async (recording) => {
+          let base64Content = recording.file_content;
+          
+          // If file_content is not available, generate it from audioBlob
+          if (!base64Content && recording.audioBlob) {
+            base64Content = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                resolve((reader.result as string).split(',')[1]);
+              };
+              reader.readAsDataURL(recording.audioBlob as Blob);
+            });
+          }
+
+          if (!base64Content) {
+            throw new Error(`Missing audio content for recording ${recording.lemma}`);
+          }
+
+          return {
+            file_content: base64Content,
+            filename: recording.filename || `${recording.lexeme_id}-${recording.lang_code.toLowerCase()}-${recording.lemma}.ogg`,
+            formid: recording.formId,
+            lang_label: recording.lang_label,
+            lang_wdqid: recording.lang_wdqid
+          };
+        })
       );
 
-      const validSubmissions = submissions.filter((s): s is AddAudioTranslationRequest => s !== null);
-      
-      for (const submission of validSubmissions) {
-        await api.addAudioTranslation(submission);
-      }
+      // Submit all recordings in a single request
+      await addAudioTranslation(submissions);
       onSubmit();
     } catch (error) {
       console.error('Error submitting recordings:', error);
       // Handle error - show error message to the user
+    }
+  }
+
+  const toggleRecordingSelection = (index: number) => {
+    setSelectedRecordings(prev => {
+      if (prev.includes(index)) {
+        return prev.filter(i => i !== index);
+      } else {
+        return [...prev, index];
+      }
+    });
+  }
+
+  const toggleAllRecordings = () => {
+    if (selectedRecordings.length === recordedItems.length) {
+      // If all are selected, unselect all
+      setSelectedRecordings([]);
+    } else {
+      // Otherwise, select all non-deleted recordings
+      const allIndices = recordedItems
+        .map((_, index) => index)
+        .filter(index => !deletedIndices.includes(index));
+      setSelectedRecordings(allIndices);
     }
   }
 
@@ -223,18 +269,29 @@ export function ReviewInterface({ recordings, onSubmit }: ReviewInterfaceProps) 
             <h2 className="text-2xl font-semibold mb-2">Review Your Recordings</h2>
             <div className="flex items-center gap-6 text-sm text-gray-600">
               <span>{recordedItems.length} recordings</span>
+              <span>{selectedRecordings.length} selected</span>
               <span>{totalDuration.toFixed(1)}s total duration</span>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowKeyboardHelp(!showKeyboardHelp)}
-            className="text-gray-500 hover:text-gray-700"
-            title="Show keyboard shortcuts (Ctrl+H)"
-          >
-            <Keyboard className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={toggleAllRecordings}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              {selectedRecordings.length === recordedItems.length ? 'Deselect All' : 'Select All'}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowKeyboardHelp(!showKeyboardHelp)}
+              className="text-gray-500 hover:text-gray-700"
+              title="Show keyboard shortcuts (Ctrl+H)"
+            >
+              <Keyboard className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -252,6 +309,15 @@ export function ReviewInterface({ recordings, onSubmit }: ReviewInterfaceProps) 
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
+                    <input
+                      type="checkbox"
+                      checked={selectedRecordings.includes(index)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        toggleRecordingSelection(index);
+                      }}
+                      className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
                     <Button
                       variant="outline"
                       size="sm"

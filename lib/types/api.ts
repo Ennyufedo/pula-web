@@ -68,12 +68,12 @@ export interface AddLabeledTranslationRequest {
 }
 
 export interface AddAudioTranslationRequest {
-  file_content: string; // base64-encoded audio
+  file_content: string;
   filename: string;
   formid: string;
   lang_label: string;
   lang_wdqid: string;
-}
+}[]
 
 export interface LoginResponse {
   redirect_string: string;

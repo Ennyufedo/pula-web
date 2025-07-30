@@ -5,6 +5,8 @@ export interface RecordingData {
   formId: string
   lemma: string
   audioBlob?: Blob
+  file_content?: string
+  filename?: string
   isRecorded: boolean
   duration?: number
   lang_label: string

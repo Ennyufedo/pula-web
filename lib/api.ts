@@ -154,7 +154,7 @@ class ApiClient {
    */
   async addAudioTranslation(request: AddAudioTranslationRequest[]): Promise<void> {
     try {
-      await this.client.post('/lexeme/audio/add', request);
+      await this.client.post('/lexeme/audio/add', { request });
     } catch (error) {
       checkIf401Error(error as ApiError);
       throw error as ApiError;
