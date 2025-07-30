@@ -111,10 +111,10 @@ jobs:
           MESSAGE: "Build: ({sha}) {msg}" # The commit message
       - name: Restart Agpb
         run: |
-          ssh -i id_ed25519 "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<EOF
-          become agpb
-          toolforge build start git@github.com:${{ secrets.MY_GITHUB_USER }}/${{ github.repository }} --ref build --use-latest-versions
-          toolforge webservice buildservice restart --mount all
-          exit
-          exit
+          ssh -i id_ed25519 "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<'EOF'
+            become agpb
+            toolforge build start git@github.com:${{ secrets.MY_GITHUB_USER }}/${{ github.repository }} --ref build --use-latest-versions
+            toolforge webservice buildservice restart --mount all
+            exit
+            exit
           EOF
