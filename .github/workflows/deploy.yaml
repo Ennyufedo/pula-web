@@ -99,8 +99,8 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > id_rsa
-          chmod 600 id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > id_ed25519
+          chmod 600 id_ed25519
       - name: Push to Distribution branch
         uses: s0/git-publish-subdir-action@develop
         env:
@@ -111,9 +111,9 @@ jobs:
           MESSAGE: "Build: ({sha}) {msg}" # The commit message
       - name: Restart Agpb
         run: |
-          ssh -i id_rsa "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<EOF
+          ssh -i id_ed25519 "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" <<EOF
           become agpb
-          toolforge build start https://github.com/${{ github.repository }} --ref build --use-latest-versions
+          toolforge build start git@github.com:${{ secrets.MY_GITHUB_USER }}/${{ github.repository }} --ref build --use-latest-versions
           toolforge webservice buildservice restart --mount all
           exit
           exit
