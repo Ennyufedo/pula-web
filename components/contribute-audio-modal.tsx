@@ -72,10 +72,10 @@ export default function ContributeAudioModal({
       setRecordingTime(0);
       // timer will be started by useEffect when isRecording becomes true
 
-      const chunks: BlobPart[] = [];
-      mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+      audioChunksRef.current = [];
+      mediaRecorder.ondataavailable = (e) => audioChunksRef.current.push(e.data);
       mediaRecorder.onstop = async () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/ogg" })
+        const blob = new Blob(audioChunksRef.current, { type: "audio/ogg" });
         setAudioBlob(blob);
 
         // Convert blob to base64
