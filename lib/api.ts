@@ -19,7 +19,7 @@ import { checkIf401Error } from './utils';
 class ApiClient {
   private client: AxiosInstance;
 
-  constructor() {
+  constructor () {
     const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://agpb-server-v1.toolforge.org/api';
 
     this.client = axios.create({
@@ -155,7 +155,7 @@ class ApiClient {
    */
   async addAudioTranslation(request: AddAudioTranslationRequest[]): Promise<void> {
     try {
-      await this.client.post('/lexeme/audio/add', { request });
+      await this.client.post('/lexeme/audio/add', request);
     } catch (error) {
       checkIf401Error(error as ApiError);
       throw error as ApiError;
@@ -227,7 +227,7 @@ export const api = {
   oauthCallback: (oauth_verifier: string, oauth_token: string) => apiClient.oauthCallback(oauth_verifier, oauth_token),
   logout: () => apiClient.logout(),
   setAuthToken: (token: string | null) => apiClient.setAuthToken(token),
-  getLexemeMissingAudio:(request: LexemeMissingAudioResquest) => apiClient.getLexemeMissingAudio(request),
+  getLexemeMissingAudio: (request: LexemeMissingAudioResquest) => apiClient.getLexemeMissingAudio(request),
 };
 
 export default apiClient;
