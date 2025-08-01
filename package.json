@@ -1,16 +1,20 @@
 {
   "name": "agpb-web",
-  "version": "0.1.0",
+  "version": "1.1.0",
+  "engines": {
+    "node": "22.x"
+  },
   "private": true,
-  "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
-    "start": "npm install && npm run build && node server.js",
+    "start": "node server.js",
     "lint": "next lint"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
+    "@next/bundle-analyzer": "^15.4.5",
+    "@noxfed/lottie-webpack-loader": "^1.0.1",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -48,6 +52,7 @@
     "cmdk": "1.0.4",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
+    "eslint": "^9.32.0",
     "express": "^5.1.0",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
@@ -73,5 +78,10 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
+  "resolutions": {
+    "@types/react": "19.1.8",
+    "@types/react-dom": "19.1.6"
   }
 }
