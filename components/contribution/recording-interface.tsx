@@ -49,7 +49,7 @@ export function RecordingInterface({
   const [words, setWords] = useState<LexemeWord[]>(propWords.length > 0 ? propWords : [])
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [isRecording, setIsRecording] = useState(false)
-  const [isPlaying, setIsPlaying] = useState(false)
+
   const [recordingTime, setRecordingTime] = useState(0)
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false)
   const [isHardwareCheckOpen, setIsHardwareCheckOpen] = useState(false)
@@ -107,7 +107,7 @@ export function RecordingInterface({
       }
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/wav" })
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/ogg" })
         if (currentWord) {
           const duration = recordingTime;
           updateWordData(currentWord.lexeme_id, {

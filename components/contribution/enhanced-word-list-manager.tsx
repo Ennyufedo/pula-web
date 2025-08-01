@@ -6,23 +6,18 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Spinner } from "@/components/ui/spinner"
 import {
   Trash2,
   Plus,
-  Share2,
   Mic,
   Tag,
   Settings,
-  Edit,
-  ExternalLink,
   X,
   Users,
-  AlertTriangle,
-  CheckCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Label } from "@/components/ui/label"
-import { BulkLabelOperations } from "./bulk-label-operations"
 import { validateLabel, getQualityBadgeColor } from "@/utils/label-validation"
 import SearchInput from "@/components/search-input"
 
@@ -47,7 +42,6 @@ interface EnhancedWordListManagerProps {
   onWordsChange: (words: LexemeWord[]) => void
   onOpenWikimediaModal: () => void
 }
-
 
 export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaModal, searchQuery, setSearchQuery, onSearch }: EnhancedWordListManagerProps & { searchQuery: string, setSearchQuery: (v: string) => void, onSearch: (v: string) => void }) {
   const [showWordGenerators, setShowWordGenerators] = useState(false)
@@ -149,12 +143,12 @@ export function EnhancedWordListManager({ words, onWordsChange, onOpenWikimediaM
             <span className="text-orange-600">{ stats.needsAudio } need audio</span>
           </div>
         </div>
-        <div className="flex gap-2">
+        {/* <div className="flex gap-2">
           <Button onClick={ () => setIsBulkOperationsOpen(true) } variant="outline" size="sm">
             <Users className="w-4 h-4 mr-2" />
             Bulk Operations
           </Button>
-        </div>
+        </div> */}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100%-6rem)]">

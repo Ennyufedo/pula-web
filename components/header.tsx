@@ -12,14 +12,22 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const { login, logout } = useApiWithStore();
   const token = useAuthStore((state: AuthState ) => state.token);
+  const username = useAuthStore((state: AuthState) => state.username);
   const hydrate = useAuthStore((state: AuthState ) => state.hydrate);
 
   useEffect(() => {
     hydrate();
   }, [hydrate]);
 
+  useEffect(() => {
+    // Re-hydrate when token changes
+    if (token) {
+      hydrate();
+    }
+  }, [token, hydrate]);
+
   const handleLogin = async () => {
-    const data = await login();
+    const data: { redirect_string: string } = await login();
     if (data.redirect_string) {
       window.location.href = data.redirect_string;
     }
@@ -82,9 +90,18 @@ export default function Header() {
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <button className="p-2 transition-colors" style={{ color: "#72777d" }}>
+            {username ? (
+              <div className="flex items-center space-x-2">
+              <User className="w-5 h-5" style={{ color: "#72777d" }} />
+              <span className="text-sm font-medium" style={{ color: "#222222" }}>
+                {username}
+              </span>
+              </div>
+            ) : (
+              <button className="p-2 transition-colors" style={{ color: "#72777d" }}>
               <User className="w-5 h-5" />
-            </button>
+              </button>
+            )}
             <Button
               variant="outline"
               onClick={token ? handleLogout : handleLogin}

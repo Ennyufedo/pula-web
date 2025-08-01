@@ -172,12 +172,12 @@ export function generateAudioFilename(
   label: string
 ): string {
   // Clean and sanitize inputs
-  console.log(
-    "generateAudioFilename",
-    lexemeId,
-    destinationLanguageCode,
-    label
-  );
+  // console.log(
+  //   "generateAudioFilename",
+  //   lexemeId,
+  //   destinationLanguageCode,
+  //   label
+  // );
   const cleanLexemeId = lexemeId.trim();
   const cleanLanguageCode = destinationLanguageCode.trim().toLowerCase();
   const cleanLabel = label
@@ -185,7 +185,7 @@ export function generateAudioFilename(
     .replace(/[^a-zA-Z0-9\s]/g, "")
     .replace(/\s+/g, "");
 
-  const filename = `${cleanLexemeId}-${cleanLanguageCode}-${cleanLabel}audio.ogg`;
-  console.log("filename", filename);
+  const filename = `${cleanLexemeId}-${cleanLanguageCode}-${cleanLabel}.ogg`;
+  // console.log("filename", filename);
   return filename;
 }

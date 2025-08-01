@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Spinner } from "@/components/ui/spinner"
 import { LogOut, ChevronLeft, ChevronRight, Check } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { WikimediaCategoryModal, type WikimediaCategoryData } from "@/components/contribution/wikimedia-category-modal"
 import { EnhancedWordListManager } from "@/components/contribution/enhanced-word-list-manager"
 import { RecordingInterface } from "@/components/contribution/recording-interface"
 import { ReviewInterface } from "@/components/contribution/review-interface"
-import LanguageSelect from "@/components/language-select"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import { Toaster } from "@/components/ui/toaster"
@@ -222,7 +222,12 @@ export default function ContributePage() {
                 Refresh
               </Button>
             </div>
-            {loadingWords && <div className="text-blue-600 mb-2">Loading words...</div>}
+            {loadingWords && (
+              <div className="flex items-center gap-2 text-blue-600 mb-2">
+                <Spinner size="sm" />
+                <span>Loading words...</span>
+              </div>
+            )}
             {lexemeApiError && <div className="text-red-600 mb-2">{lexemeApiError}</div>}
             <EnhancedWordListManager
               words={wordList}

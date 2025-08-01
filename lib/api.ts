@@ -19,7 +19,7 @@ import { checkIf401Error } from './utils';
 class ApiClient {
   private client: AxiosInstance;
 
-  constructor() {
+  constructor () {
     const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://agpb-server-v1.toolforge.org/api';
 
     this.client = axios.create({
@@ -28,6 +28,7 @@ class ApiClient {
       headers: {
         'Content-Type': 'application/json',
       },
+      withCredentials: true
     });
 
     // Add response interceptor for error handling
@@ -154,7 +155,7 @@ class ApiClient {
    */
   async addAudioTranslation(request: AddAudioTranslationRequest[]): Promise<void> {
     try {
-      await this.client.post('/lexeme/audio/add', { request });
+      await this.client.post('/lexeme/audio/add', request);
     } catch (error) {
       checkIf401Error(error as ApiError);
       throw error as ApiError;
@@ -176,9 +177,9 @@ class ApiClient {
   /**
    * OAuth callback: Exchange verifier/token for app token
    */
-  async oauthCallback(oauth_verifier: string, oauth_token: string): Promise<OauthCallbackResponse> {
+  async oauthCallback(oauth_verifier: string, oauth_token: string, username: string): Promise<OauthCallbackResponse> {
     try {
-      const response: AxiosResponse<OauthCallbackResponse> = await this.client.get(`/oauth-callback?oauth_verifier=${encodeURIComponent(oauth_verifier)}&oauth_token=${encodeURIComponent(oauth_token)}`);
+      const response: AxiosResponse<OauthCallbackResponse> = await this.client.get(`/oauth-callback?oauth_verifier=${encodeURIComponent(oauth_verifier)}&oauth_token=${encodeURIComponent(oauth_token)}&username=${encodeURIComponent(username)}`);
       return response.data;
     } catch (error) {
       throw error as ApiError;
@@ -223,10 +224,10 @@ export const api = {
   addLabeledTranslation: (request: AddLabeledTranslationRequest[]) => apiClient.addLabeledTranslation(request),
   addAudioTranslation: (request: AddAudioTranslationRequest[]) => apiClient.addAudioTranslation(request),
   login: () => apiClient.login(),
-  oauthCallback: (oauth_verifier: string, oauth_token: string) => apiClient.oauthCallback(oauth_verifier, oauth_token),
+  oauthCallback: (oauth_verifier: string, oauth_token: string, username: string) => apiClient.oauthCallback(oauth_verifier, oauth_token, username),
   logout: () => apiClient.logout(),
   setAuthToken: (token: string | null) => apiClient.setAuthToken(token),
-  getLexemeMissingAudio:(request: LexemeMissingAudioResquest) => apiClient.getLexemeMissingAudio(request),
+  getLexemeMissingAudio: (request: LexemeMissingAudioResquest) => apiClient.getLexemeMissingAudio(request),
 };
 
 export default apiClient;
