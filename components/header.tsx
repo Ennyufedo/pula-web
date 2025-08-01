@@ -19,7 +19,7 @@ export default function Header() {
   }, [hydrate]);
 
   const handleLogin = async () => {
-    const data = await login();
+    const data: { redirect_string: string } = await login();
     if (data.redirect_string) {
       window.location.href = data.redirect_string;
     }
