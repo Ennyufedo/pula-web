@@ -38,6 +38,7 @@ export default function ContributeAudioModal({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const { selectedLexeme, addAudioTranslation } = useApiWithStore();
   const [audioBase64, setAudioBase64] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const audioChunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
@@ -136,29 +137,36 @@ export default function ContributeAudioModal({
       return;
     }
 
-    // Generate filename using the utility function
-    const lexemeId = selectedLexeme?.lexeme?.id || "";
-    const destinationLanguageCode = language?.lang_code || "";
-    const label = selectedLexeme?.glosses[0]?.gloss.value || "";
-    const filename = generateAudioFilename(
-      lexemeId,
-      destinationLanguageCode,
-      label
-    );
+    setIsSubmitting(true);
+    try {
+      // Generate filename using the utility function
+      const lexemeId = selectedLexeme?.lexeme?.id || "";
+      const destinationLanguageCode = language?.lang_code || "";
+      const label = selectedLexeme?.glosses[0]?.gloss.value || "";
+      const filename = generateAudioFilename(
+        lexemeId,
+        destinationLanguageCode,
+        label
+      );
 
-    const request: AddAudioTranslationRequest[] = [
-      {
-        file_content: audioBase64,
-        filename: filename,
-        formid: selectedLexeme?.glosses[0]?.gloss.formId || "",
-        lang_label: language?.lang_label || "",
-        lang_wdqid: language?.lang_wd_id || "",
-      },
-    ];
-    // console.log("Creating audio translation", request);
-    const response = await addAudioTranslation(request);
-    // console.log("Audio translation created", response);
-    onSuccess?.();
+      const request: AddAudioTranslationRequest[] = [
+        {
+          file_content: audioBase64,
+          filename: filename,
+          formid: selectedLexeme?.glosses[0]?.gloss.formId || "",
+          lang_label: language?.lang_label || "",
+          lang_wdqid: language?.lang_wd_id || "",
+        },
+      ];
+
+      await addAudioTranslation(request);
+      onSuccess?.();
+      onOpenChange(false); // Close the modal on success
+    } catch (error) {
+      console.error("Error submitting audio:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -237,11 +245,18 @@ export default function ContributeAudioModal({
           </div>
 
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={!audioBlob}>
-              Submit
+            <Button
+              onClick={handleSubmit}
+              disabled={!audioBlob || isSubmitting}
+            >
+              {isSubmitting ? "Uploading..." : "Submit"}
             </Button>
           </div>
         </div>
