@@ -61,7 +61,8 @@ export default function ResultsPage({
   const [singleLexemeObj, setSingleLexemeObj] = useState<any>(null);
   const areLanguagesSelected =
     selectedSourceLanguage &&
-    (selectedTargetLanguage1 || selectedTargetLanguage2);
+    selectedTargetLanguage1 &&
+    selectedTargetLanguage2;
   const [searchQuery, setSearchQuery] = useState(query || "");
   const [open, setOpen] = useState(false);
   const [contributingLanguage, setContributingLanguage] =

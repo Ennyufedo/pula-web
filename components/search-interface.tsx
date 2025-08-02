@@ -27,7 +27,8 @@ export default function SearchInterface() {
 
   const areLanguagesSelected =
     selectedSourceLanguage &&
-    (selectedTargetLanguage1 || selectedTargetLanguage2);
+    selectedTargetLanguage1 &&
+    selectedTargetLanguage2;
   // const areLanguagesSelected = true;
 
   // Load languages when component mounts
@@ -88,7 +89,7 @@ export default function SearchInterface() {
               setSelectedTargetLanguage1(language || null);
             }}
             placeholder="Select target language 1"
-            label="Target Language 1"
+            label="Target Language 1 *"
           />
           <LanguageSelect
             value={selectedTargetLanguage2?.lang_code || ""}
@@ -99,7 +100,7 @@ export default function SearchInterface() {
               setSelectedTargetLanguage2(language || null);
             }}
             placeholder="Select target language 2"
-            label="Target Language 2"
+            label="Target Language 2 *"
           />
         </div>
       </div>
