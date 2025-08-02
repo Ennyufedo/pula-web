@@ -27,7 +27,8 @@ export default function SearchInterface() {
 
   const areLanguagesSelected =
     selectedSourceLanguage &&
-    (selectedTargetLanguage1 || selectedTargetLanguage2);
+    selectedTargetLanguage1 &&
+    selectedTargetLanguage2;
   // const areLanguagesSelected = true;
 
   // Load languages when component mounts
@@ -36,7 +37,6 @@ export default function SearchInterface() {
   }, []);
 
   useEffect(() => {
-    // console.log("clickedLexeme", clickedLexeme);
     if (clickedLexeme) {
       router.push(`/results/${encodeURIComponent(clickedLexeme.id)}`);
     }
@@ -52,15 +52,6 @@ export default function SearchInterface() {
       });
       return;
     }
-
-    // if (query) {
-    // console.log("query", query);
-    // console.log("searchQuery", searchQuery);
-    // return;
-    // console.log("clickedLexeme", clickedLexeme)
-    // return;
-    // router.push(`/results/${encodeURIComponent(query)}`)
-    // }
   };
 
   return (
@@ -99,6 +90,7 @@ export default function SearchInterface() {
             }}
             placeholder="Select target language 1"
             label="Target Language 1"
+            span="*"
           />
           <LanguageSelect
             value={selectedTargetLanguage2?.lang_code || ""}
@@ -110,6 +102,7 @@ export default function SearchInterface() {
             }}
             placeholder="Select target language 2"
             label="Target Language 2"
+            span="*"
           />
         </div>
       </div>

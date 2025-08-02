@@ -12,6 +12,7 @@ import { AddLabeledTranslationRequest, Language, LexemeSearchRequest, LexemeSear
 import { useEffect, useState } from "react";
 import { useApiWithStore } from "@/hooks/useApiWithStore";
 import { api } from "@/lib/api";
+import Spinner from "./spinner";
 
 interface ContributeModalProps {
   open: boolean;
@@ -62,7 +63,6 @@ export default function ContributeLabelModal({
     const results = await api.searchLexemes(request);
     setLexemes(results);
     setHasSelectedLexeme(false);
-    console.log("lexemes zzzz", results);
   };
 
   useEffect(() => {
@@ -145,6 +145,7 @@ export default function ContributeLabelModal({
             </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
               {isSubmitting ? "Saving..." : (hasSelectedLexeme ? "Save existing label" : "Save new label")}
+              <Spinner loading={isSubmitting} />
             </Button>
           </div>
         </div>

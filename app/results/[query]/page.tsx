@@ -18,6 +18,7 @@ import ContributeAudioModal from "@/components/contribute-audio-modal";
 import ContributeLabelModal from "@/components/contribute-label-modal";
 import { useAuthStore } from "@/lib/stores";
 import GuessContribute from "@/components/guess-contribute";
+import Spinner from "@/components/spinner";
 
 export default function ResultsPage({
   params,
@@ -60,7 +61,8 @@ export default function ResultsPage({
   const [singleLexemeObj, setSingleLexemeObj] = useState<any>(null);
   const areLanguagesSelected =
     selectedSourceLanguage &&
-    (selectedTargetLanguage1 || selectedTargetLanguage2);
+    selectedTargetLanguage1 &&
+    selectedTargetLanguage2;
   const [searchQuery, setSearchQuery] = useState(query || "");
   const [open, setOpen] = useState(false);
   const [contributingLanguage, setContributingLanguage] =
@@ -75,35 +77,11 @@ export default function ResultsPage({
     hydrate();
   }, [hydrate]);
 
-  // const handleSearch = useCallback(
-  //   async (searchQuery: string) => {
-  //     return;
-  //     if (!selectedSourceLanguage) return;
-
-  //     try {
-  //       await searchLexemes({
-  //         ismatch: 0,
-  //         search: searchQuery,
-  //         src_lang: selectedSourceLanguage.lang_code,
-  //       });
-  //     } catch (error) {
-  //       console.error("Search failed:", error);
-  //     }
-  //   },
-  //   [selectedSourceLanguage?.lang_code]
-  // );
 
   useEffect(() => {
     getLanguages();
   }, []);
 
-  // Search for lexemes when component mounts or query changes
-  // useEffect(() => {
-  //   if (query && selectedSourceLanguage?.lang_code) {
-  //     console.log(">>>> query", query);
-  //     handleSearch(query);
-  //   }
-  // }, [query, selectedSourceLanguage?.lang_code]);
 
   useEffect(() => {
     if (clickedLexeme && clickedLexeme.id) {
@@ -176,22 +154,22 @@ export default function ResultsPage({
     if (!language) {
       return;
     }
-    console.log("handleContribute", type, language);
     setOpen(true);
     setContributingLanguage(language);
     setContributingType(type);
   };
 
   const onContributeSuccess = async () => {
+    // toast success
+    toast({
+      title: "Contribution saved",
+      description: "Thank you for your contribution. We appreciate your help!",
+      variant: 'success',
+      duration: 3000,
+      position: 'top-right',
+    });
     await getLexemeDetails();
   };
-
-  // Auto-select first lexeme if available
-  // useEffect(() => {
-  //   if (lexemes && lexemes.length > 0 && !sourceLexemeDetails) {
-  //     handleGetLexemeDetails(lexemes[0].id);
-  //   }
-  // }, [lexemes, sourceLexemeDetails, handleGetLexemeDetails]);
 
   return (
     <div
@@ -236,7 +214,7 @@ export default function ResultsPage({
                     } }
                     placeholder="Select target language 1"
                     label="Target Language 1"
-                    require="*"
+                    span="*"
                   />
                   <LanguageSelect
                     value={ selectedTargetLanguage2?.lang_code || "" }
@@ -248,7 +226,7 @@ export default function ResultsPage({
                   } }
                   placeholder="Select target language 2"
                   label="Target Language 2"
-                  require="*"
+                  span="*"
                 />
               </div>
             </div>
@@ -281,7 +259,7 @@ export default function ResultsPage({
               >
                 { isLoadingDetails && (
                   <div className="text-center py-8">
-                    <p style={ { color: "#72777d" } }>Loading details...</p>
+                    <Spinner loading={isLoadingDetails} content="Loading details..." />
                   </div>
                 ) }
                 <LexemeDetailResultComponent
@@ -315,7 +293,7 @@ export default function ResultsPage({
               >
                 { isLoadingDetails && (
                   <div className="text-center py-8">
-                    <p style={ { color: "#72777d" } }>Loading details...</p>
+                    <Spinner loading={isLoadingDetails} content="Loading details..." />
                   </div>
                 ) }
                 <Tabs defaultValue="target1" className="w-full">

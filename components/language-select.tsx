@@ -3,13 +3,14 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown, Check, Search } from "lucide-react";
 import { useLanguageStore } from "@/lib/stores";
+import Spinner from "./spinner";
 
 interface LanguageSelectProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   label?: string;
-  require?: string;
+  span?: string;
 }
 
 export default function LanguageSelect({
@@ -17,7 +18,7 @@ export default function LanguageSelect({
   onChange,
   placeholder = "Select language",
   label,
-  require,
+  span,
 }: LanguageSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -69,16 +70,28 @@ export default function LanguageSelect({
 
   return (
     <div>
-      {label && (
-        <label
-          className="block text-sm font-medium mb-2"
-          style={{ color: "#222222" }}
-          aria-required
-        >
-          {label}
-        </label>
-      )}
-      {require && <span style={{ color: "#f50303" }}>{require}</span>}
+      <div className=" flex items-center">
+        {label && (
+          <>
+            <label
+              className="block text-sm font-medium mb-2"
+              style={{ color: "#222222" }}
+              aria-required
+            >
+              <span>{label}</span>
+            </label>
+            {span && (
+              <span
+                className="text-sm text-red-500 ml-1"
+                style={{ color: "#f50303" }}
+              >
+                <span>{span}</span>
+              </span>
+            )}
+            <Spinner loading={loading} />
+          </>
+        )}
+      </div>
       <div className="relative" ref={selectRef}>
         <button
           type="button"
@@ -161,7 +174,8 @@ export default function LanguageSelect({
                     onClick={() => handleSelect(language.lang_code)}
                     className="w-full text-left px-3 py-2 text-sm focus:outline-none flex items-center justify-between transition-colors"
                     style={{ color: "#222222" }}
-                    onMouseEnter={(e) =>(e.currentTarget.style.backgroundColor = "#f8f9fa")
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.backgroundColor = "#f8f9fa")
                     }
                     onMouseLeave={(e) =>
                       (e.currentTarget.style.backgroundColor = "transparent")
