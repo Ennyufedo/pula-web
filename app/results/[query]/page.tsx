@@ -18,6 +18,7 @@ import ContributeAudioModal from "@/components/contribute-audio-modal";
 import ContributeLabelModal from "@/components/contribute-label-modal";
 import { useAuthStore } from "@/lib/stores";
 import GuessContribute from "@/components/guess-contribute";
+import Spinner from "@/components/spinner";
 
 export default function ResultsPage({
   params,
@@ -182,7 +183,24 @@ export default function ResultsPage({
     setContributingType(type);
   };
 
+  // useEffect(() => {
+  //   toast({
+  //     title: "Success",
+  //     description: "Contribution saved successfully",
+  //     variant: 'success',
+  //     duration: 3000,
+  //     // position: 'top-right',
+  //   });
+  // }, []);
+
   const onContributeSuccess = async () => {
+    // toast success
+    toast({
+      title: "Success",
+      description: "Contribution saved successfully",
+      variant: 'success',
+      duration: 3000,
+    });
     await getLexemeDetails();
   };
 
@@ -281,7 +299,7 @@ export default function ResultsPage({
               >
                 { isLoadingDetails && (
                   <div className="text-center py-8">
-                    <p style={ { color: "#72777d" } }>Loading details...</p>
+                    <Spinner loading={isLoadingDetails} content="Loading details..." />
                   </div>
                 ) }
                 <LexemeDetailResultComponent
@@ -315,7 +333,7 @@ export default function ResultsPage({
               >
                 { isLoadingDetails && (
                   <div className="text-center py-8">
-                    <p style={ { color: "#72777d" } }>Loading details...</p>
+                    <Spinner loading={isLoadingDetails} content="Loading details..." />
                   </div>
                 ) }
                 <Tabs defaultValue="target1" className="w-full">
