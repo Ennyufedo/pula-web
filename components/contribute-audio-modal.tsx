@@ -14,6 +14,7 @@ import { WaveformVisualizer } from "./contribution/waveform-visualizer";
 import { AddAudioTranslationRequest, Language } from "@/lib/types/api";
 import { useApiWithStore } from "@/hooks/useApiWithStore";
 import { generateAudioFilename } from "@/utils/label-validation";
+import Spinner from "./spinner";
 
 interface ContributeModalProps {
   open: boolean;
@@ -256,7 +257,7 @@ export default function ContributeAudioModal({
               onClick={handleSubmit}
               disabled={!audioBlob || isSubmitting}
             >
-              {isSubmitting ? "Uploading..." : "Submit"}
+              <Spinner loading={isSubmitting} content={isSubmitting ? "Uploading..." : "Submit"} />
             </Button>
           </div>
         </div>
