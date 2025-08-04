@@ -81,6 +81,8 @@ export interface LoginResponse {
 
 export interface OauthCallbackResponse {
   token: string;
+  username: string;
+  pref_langs?: string;
 }
 
 export interface LexemeMissingAudioResponse {

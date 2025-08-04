@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuthStore } from "@/lib/stores/authStore";
 import { useApiWithStore } from "@/hooks/useApiWithStore";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const setToken = useAuthStore((state) => state.setToken);
   const { oauthCallback } = useApiWithStore();
   const [error, setError] = useState<string | null>(null);
 
@@ -23,7 +21,6 @@ export default function AuthCallbackPage() {
       try {
         const data = await oauthCallback(oauth_verifier, oauth_token);
         if (data.token) {
-          setToken(data.token);
           router.replace("/");
         } else {
           setError("No token received from server.");
@@ -32,7 +29,7 @@ export default function AuthCallbackPage() {
         setError(err.message || "Unknown error");
       }
     })();
-  }, [searchParams, setToken, router, oauthCallback]);
+  }, [searchParams, router, oauthCallback]);
 
   if (error) {
     return <div className="p-8 text-center text-red-600">Auth failed: {error}</div>;
