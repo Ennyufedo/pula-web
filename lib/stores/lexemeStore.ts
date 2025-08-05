@@ -18,13 +18,14 @@ export interface LexemeState {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
+  hydrate: () => void;
 }
 
 export const useLexemeStore = create<LexemeState>((set: any) => ({
-  lexemes: localStorage.getItem(LIST_OF_LEXEMES) ? JSON.parse(localStorage.getItem(LIST_OF_LEXEMES) || '{}') : [],
+  lexemes: [],
   query: "",
-  selectedLexeme: localStorage.getItem(SELECTED_LEXEME) ? JSON.parse(localStorage.getItem(SELECTED_LEXEME) || '{}') : null,
-  clickedLexeme: localStorage.getItem(CLICKED_LEXEME) ? JSON.parse(localStorage.getItem(CLICKED_LEXEME) || '{}') : null,
+  selectedLexeme: null,
+  clickedLexeme: null,
   loading: false,
   error: null,
 
@@ -33,7 +34,9 @@ export const useLexemeStore = create<LexemeState>((set: any) => ({
   setSelectedLexeme: (lexeme: any) => set({ selectedLexeme: lexeme }),
   setClickedLexeme: (lexeme: any) => {
     set({ clickedLexeme: lexeme });
-    localStorage.setItem(SELECTED_LEXEME, JSON.stringify(lexeme));
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(SELECTED_LEXEME, JSON.stringify(lexeme));
+    }
   },
   setLoading: (loading: boolean) => set({ loading }),
   setError: (error: any) => set({ error }),
@@ -45,4 +48,21 @@ export const useLexemeStore = create<LexemeState>((set: any) => ({
     loading: false,
     error: null,
   }),
+  hydrate: () => {
+    if (typeof window !== 'undefined') {
+      const storedLexemes = localStorage.getItem(LIST_OF_LEXEMES);
+      const storedSelected = localStorage.getItem(SELECTED_LEXEME);
+      const storedClicked = localStorage.getItem(CLICKED_LEXEME);
+      
+      if (storedLexemes) {
+        set({ lexemes: JSON.parse(storedLexemes) });
+      }
+      if (storedSelected) {
+        set({ selectedLexeme: JSON.parse(storedSelected) });
+      }
+      if (storedClicked) {
+        set({ clickedLexeme: JSON.parse(storedClicked) });
+      }
+    }
+  },
 })); 
