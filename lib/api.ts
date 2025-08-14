@@ -14,7 +14,6 @@ import {
   LexemeMissingAudioResquest,
   LexemeMissingAudioResponse,
 } from './types/api';
-import { TOKEN_KEY } from './stores/authStore';
 import { checkIf401Error } from './utils';
 
 class ApiClient {
@@ -193,11 +192,10 @@ class ApiClient {
   /**
    * Logout: Invalidate the session on the backend
    */
-  async logout(): Promise<void> {
+  async logout(token: string): Promise<void> {
     try {
-      await this.client.get('/auth/logout');
+      await this.client.post('/auth/logout', { token });
     } catch (error) {
-      checkIf401Error(error as ApiError);
       throw error as ApiError;
     }
   }
@@ -229,7 +227,7 @@ export const api = {
   addAudioTranslation: (request: AddAudioTranslationRequest[]) => apiClient.addAudioTranslation(request),
   login: () => apiClient.login(),
   oauthCallback: (oauth_verifier: string, oauth_token: string) => apiClient.oauthCallback(oauth_verifier, oauth_token),
-  logout: () => apiClient.logout(),
+  logout: (token: string) => apiClient.logout(token),
   setAuthToken: (token: string | null) => apiClient.setAuthToken(token),
   getLexemeMissingAudio: (request: LexemeMissingAudioResquest) => apiClient.getLexemeMissingAudio(request),
 };

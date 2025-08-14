@@ -325,7 +325,7 @@ export const useApiWithStore = () => {
   const logout = useCallback(async () => {
     api.setAuthToken(token);
     try {
-      await api.logout();
+      await api.logout(token || '');
       clearToken();
       clearUsername();
       clearPrefLangs();
