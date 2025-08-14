@@ -160,24 +160,24 @@ export function getQualityBadgeColor(score: number): string {
 }
 
 /**
- * Generate audio filename in the format: {LexemeId}-{destinationLanguageCode}-{label}audio.ogg
+ * Generate audio filename in the format: {LexemeId}-{destinationLanguageCode}-{label}audio.{extension}
  * @param lexemeId - The lexeme ID (e.g., "L3625")
  * @param destinationLanguageCode - The destination language code (e.g., "de")
  * @param label - The label/word being recorded (e.g., "Mutter")
- * @returns Formatted filename (e.g., "L3625-de-Mutteraudio.ogg")
+ * @param fileExtension - The file extension (e.g., "wav", "ogg", "mp3")
+ * @returns Formatted filename (e.g., "L3625-de-Mutteraudio.wav")
  */
 export function generateAudioFilename(
   lexemeId: string,
   destinationLanguageCode: string,
-  label: string
+  label: string,
+  fileExtension: string = "wav"
 ): string {
+  // Clean and sanitize inputs
   const cleanLexemeId = lexemeId.trim();
   const cleanLanguageCode = destinationLanguageCode.trim().toLowerCase();
-  const cleanLabel = label
-    .trim()
-    .replace(/[^a-zA-Z0-9\s]/g, "")
-    .replace(/\s+/g, "");
-
-  const filename = `${cleanLexemeId}-${cleanLanguageCode}-${cleanLabel}.ogg`;
-  return filename;
+  const cleanLabel = label.trim().replace(/[^a-zA-Z0-9\s]/g, '').replace(/\s+/g, '');
+  const cleanExtension = fileExtension.trim().toLowerCase();
+  
+  return `${cleanLexemeId}-${cleanLanguageCode}-${cleanLabel}.${cleanExtension}`;
 }

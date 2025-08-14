@@ -77,12 +77,18 @@ export interface AddAudioTranslationRequest {
 
 export interface LoginResponse {
   redirect_string: string;
+  request_token: string;
 }
 
 export interface OauthCallbackResponse {
   token: string;
   username: string;
-  pref_langs?: string;
+  pref_langs: string;
+}
+
+export interface OauthCallbackRequest {
+  request_token: string;
+  query_string: string;
 }
 
 export interface LexemeMissingAudioResponse {

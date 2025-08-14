@@ -16,6 +16,18 @@ import { useApiWithStore } from "@/hooks/useApiWithStore";
 import { generateAudioFilename } from "@/utils/label-validation";
 import Spinner from "./spinner";
 
+// Wikimedia Commons supported formats
+const WIKIMEDIA_FORMATS = [
+  'audio/ogg;codecs=opus',
+  'audio/ogg;codecs=vorbis', 
+  'audio/oga',
+  'audio/flac',
+  'audio/wav',
+  'audio/opus',
+  'audio/mpeg',
+  'audio/mp3'
+];
+
 interface ContributeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,7 +52,105 @@ export default function ContributeAudioModal({
   const { selectedLexeme, addAudioTranslation } = useApiWithStore();
   const [audioBase64, setAudioBase64] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mimeType, setMimeType] = useState<string | null>(null);
+  const [isConverting, setIsConverting] = useState(false);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  // Check for supported Wikimedia Commons formats
+  const getSupportedMimeType = () => {
+    for (const format of WIKIMEDIA_FORMATS) {
+      if (MediaRecorder.isTypeSupported(format)) {
+        return format;
+      }
+    }
+    // Fallback to webm if none supported
+    return 'audio/webm;codecs=opus';
+  };
+
+  // Convert audio using Web Audio API if needed
+  const convertAudioToOgg = async (blob: Blob): Promise<Blob> => {
+    try {
+      setIsConverting(true);
+      
+      // Create audio context
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Convert blob to array buffer
+      const arrayBuffer = await blob.arrayBuffer();
+      
+      // Decode the audio
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      
+      // Create offline context for rendering
+      const offlineContext = new OfflineAudioContext(
+        audioBuffer.numberOfChannels,
+        audioBuffer.length,
+        audioBuffer.sampleRate
+      );
+      
+      // Create buffer source
+      const source = offlineContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(offlineContext.destination);
+      source.start();
+      
+      // Render the audio
+      const renderedBuffer = await offlineContext.startRendering();
+      
+      // Convert to WAV format (more compatible than OGG)
+      const wavBlob = audioBufferToWav(renderedBuffer);
+      
+      return wavBlob;
+    } catch (error) {
+      console.error('Audio conversion failed:', error);
+      // Return original blob if conversion fails
+      return blob;
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  // Helper function to convert AudioBuffer to WAV
+  const audioBufferToWav = (buffer: AudioBuffer): Blob => {
+    const length = buffer.length;
+    const numberOfChannels = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    const arrayBuffer = new ArrayBuffer(44 + length * numberOfChannels * 2);
+    const view = new DataView(arrayBuffer);
+    
+    // WAV header
+    const writeString = (offset: number, string: string) => {
+      for (let i = 0; i < string.length; i++) {
+        view.setUint8(offset + i, string.charCodeAt(i));
+      }
+    };
+    
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + length * numberOfChannels * 2, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, numberOfChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numberOfChannels * 2, true);
+    view.setUint16(32, numberOfChannels * 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, length * numberOfChannels * 2, true);
+    
+    // Write audio data
+    let offset = 44;
+    for (let i = 0; i < length; i++) {
+      for (let channel = 0; channel < numberOfChannels; channel++) {
+        const sample = Math.max(-1, Math.min(1, buffer.getChannelData(channel)[i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        offset += 2;
+      }
+    }
+    
+    return new Blob([arrayBuffer], { type: 'audio/wav' });
+  };
 
   useEffect(() => {
     if (isRecording) {
@@ -67,17 +177,30 @@ export default function ContributeAudioModal({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       setAudioStream(stream);
-      const mediaRecorder = new MediaRecorder(stream);
+      
+      // Get the best supported format for Wikimedia Commons
+      const supportedMimeType = getSupportedMimeType();
+      setMimeType(supportedMimeType);
+      
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: supportedMimeType });
       mediaRecorderRef.current = mediaRecorder;
       setRecordingTime(0);
-      // timer will be started by useEffect when isRecording becomes true
 
       audioChunksRef.current = [];
       mediaRecorder.ondataavailable = (e) =>
         audioChunksRef.current.push(e.data);
       mediaRecorder.onstop = async () => {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/ogg" });
-        setAudioBlob(blob);
+        // Create blob with the recorded format
+        const originalBlob = new Blob(audioChunksRef.current, { type: supportedMimeType });
+        
+        // Convert to WAV if not already in a Wikimedia Commons format
+        let finalBlob = originalBlob;
+        if (!supportedMimeType.includes('ogg') && !supportedMimeType.includes('oga') && !supportedMimeType.includes('wav')) {
+          finalBlob = await convertAudioToOgg(originalBlob);
+          setMimeType('audio/wav');
+        }
+        
+        setAudioBlob(finalBlob);
 
         // Convert blob to base64
         const base64Data = await new Promise<string>((resolve) => {
@@ -86,7 +209,7 @@ export default function ContributeAudioModal({
             const base64 = (reader.result as string).split(",")[1];
             resolve(base64);
           };
-          reader.readAsDataURL(blob);
+          reader.readAsDataURL(finalBlob);
         });
         setAudioBase64(base64Data);
       };
@@ -144,10 +267,24 @@ export default function ContributeAudioModal({
       const lexemeId = selectedLexeme?.lexeme?.id || "";
       const destinationLanguageCode = language?.lang_code || "";
       const destinationLanguageLexemeLabel = selectedLexeme?.glosses.find((gl: any) => gl.gloss.language === destinationLanguageCode)?.gloss.value || "";
+      
+      // Determine file extension based on MIME type
+      const getFileExtension = (mimeType: string) => {
+        if (mimeType.includes('wav')) return 'wav';
+        if (mimeType.includes('ogg')) return 'ogg';
+        if (mimeType.includes('oga')) return 'oga';
+        if (mimeType.includes('flac')) return 'flac';
+        if (mimeType.includes('opus')) return 'opus';
+        if (mimeType.includes('mp3') || mimeType.includes('mpeg')) return 'mp3';
+        return 'wav'; // default fallback
+      };
+      
+      const fileExtension = getFileExtension(mimeType || 'audio/wav');
       const filename = generateAudioFilename(
         lexemeId,
         destinationLanguageCode,
-        destinationLanguageLexemeLabel
+        destinationLanguageLexemeLabel, 
+        fileExtension
       );
 
       const request: AddAudioTranslationRequest[] = [
@@ -249,17 +386,32 @@ export default function ContributeAudioModal({
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isConverting}
             >
               Cancel
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!audioBlob || isSubmitting}
+              disabled={!audioBlob || isSubmitting || isConverting}
             >
-              <Spinner loading={isSubmitting} content={isSubmitting ? "Uploading..." : "Submit"} />
+              <Spinner 
+                loading={isSubmitting || isConverting} 
+                content={
+                  isConverting 
+                    ? "Converting..." 
+                    : isSubmitting 
+                      ? "Uploading..." 
+                      : "Submit"
+                } 
+              />
             </Button>
           </div>
+          
+          {isConverting && (
+            <div className="text-center text-sm text-gray-600">
+              Converting audio to Wikimedia Commons format...
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
