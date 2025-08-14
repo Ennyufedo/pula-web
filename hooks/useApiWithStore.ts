@@ -315,15 +315,12 @@ export const useApiWithStore = () => {
   /**
    * Clear the token in the store and local storage
    */
-  const clearToken = useAuthStore((state: AuthState) => state.clearToken);
+  const clearToken = useAuthStore(state => state.clearToken);
+  const clearUsername = useAuthStore(state => state.clearUsername);
+  const clearPrefLangs = useAuthStore(state => state.clearPrefLangs);
 
   /**
    * Clear the username in the store and local storage
-   */
-  const clearUsername = useAuthStore((state: AuthState) => state.clearUsername);
-
-  /**
-   * Logout from the API and clear the token and username in the store and local storage
    */
   const logout = useCallback(async () => {
     api.setAuthToken(token);
@@ -331,6 +328,7 @@ export const useApiWithStore = () => {
       await api.logout();
       clearToken();
       clearUsername();
+      clearPrefLangs();
     } catch (error) {
       const apiError = error as ApiError;
       toast({
@@ -340,7 +338,7 @@ export const useApiWithStore = () => {
       });
       throw apiError;
     }
-  }, [toast, token, clearToken, clearUsername]);
+  }, [toast, token, clearToken, clearUsername, clearPrefLangs]);
 
   return {
     addLabeledTranslation,

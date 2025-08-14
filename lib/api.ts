@@ -10,6 +10,7 @@ import {
   AddAudioTranslationRequest,
   LoginResponse,
   OauthCallbackResponse,
+  OauthCallbackRequest,
   LexemeMissingAudioResquest,
   LexemeMissingAudioResponse,
 } from './types/api';
@@ -162,7 +163,7 @@ class ApiClient {
   }
 
   /**
-   * Login: Get redirect string for OAuth
+   * Login: Get redirect string and request token for OAuth
    */
   async login(): Promise<LoginResponse> {
     try {
@@ -174,11 +175,15 @@ class ApiClient {
   }
 
   /**
-   * OAuth callback: Exchange verifier/token for app token
+   * OAuth callback: Exchange request token and query string for app token
    */
-  async oauthCallback(oauth_verifier: string, oauth_token: string): Promise<OauthCallbackResponse> {
+  async oauthCallback(request_token: string, query_string: string): Promise<OauthCallbackResponse> {
     try {
-      const response: AxiosResponse<OauthCallbackResponse> = await this.client.get(`/oauth-callback?oauth_verifier=${encodeURIComponent(oauth_verifier)}&oauth_token=${encodeURIComponent(oauth_token)}`);
+      const requestBody: OauthCallbackRequest = {
+        request_token,
+        query_string
+      };
+      const response: AxiosResponse<OauthCallbackResponse> = await this.client.post('/oauth-callback', requestBody);
       return response.data;
     } catch (error) {
       throw error as ApiError;

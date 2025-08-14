@@ -8,8 +8,48 @@ let nextConfig: NextConfig = {
         type: "memory",
       });
     }
+
+    // FFmpeg WASM support
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      path: false,
+      crypto: false,
+    };
+
+    // Handle WASM files
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+    };
+
+    // Handle Web Workers
+    config.module.rules.push({
+      test: /\.worker\.(js|ts)$/,
+      use: { loader: 'worker-loader' },
+    });
+
     // Important: return the modified config
     return config;
+  },
+
+  // Headers for cross-origin isolation (required for SharedArrayBuffer)
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Cross-Origin-Embedder-Policy',
+            value: 'require-corp',
+          },
+          {
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
+          },
+        ],
+      },
+    ];
   },
 
   eslint: {
@@ -31,7 +71,6 @@ let nextConfig: NextConfig = {
     webpackMemoryOptimizations: true,
     webpackBuildWorker: true,
     clientTraceMetadata: ['webpackChunkName'],
-
   },
 
   output: 'standalone',

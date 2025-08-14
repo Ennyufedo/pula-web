@@ -27,9 +27,17 @@ export default function Header() {
   }, [token, hydrate]);
 
   const handleLogin = async () => {
-    const data: { redirect_string: string } = await login();
-    if (data.redirect_string) {
-      window.location.href = data.redirect_string;
+    try {
+      const data = await login();
+      if (data.redirect_string) {
+        // Store request_token for use in callback
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('request_token', data.request_token);
+        }
+        window.location.href = data.redirect_string;
+      }
+    } catch (err) {
+      alert("Login failed");
     }
   }
 
