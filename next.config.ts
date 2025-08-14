@@ -9,26 +9,6 @@ let nextConfig: NextConfig = {
       });
     }
 
-    // FFmpeg WASM support
-    config.resolve.fallback = {
-      ...config.resolve.fallback,
-      fs: false,
-      path: false,
-      crypto: false,
-    };
-
-    // Handle WASM files
-    config.experiments = {
-      ...config.experiments,
-      asyncWebAssembly: true,
-    };
-
-    // Handle Web Workers
-    config.module.rules.push({
-      test: /\.worker\.(js|ts)$/,
-      use: { loader: 'worker-loader' },
-    });
-
     // Important: return the modified config
     return config;
   },
