@@ -12,26 +12,7 @@ let nextConfig: NextConfig = {
     // Important: return the modified config
     return config;
   },
-
-  // Headers for cross-origin isolation (required for SharedArrayBuffer)
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'Cross-Origin-Embedder-Policy',
-            value: 'require-corp',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-        ],
-      },
-    ];
-  },
-
+  
   eslint: {
     ignoreDuringBuilds: true,
   },
