@@ -98,12 +98,12 @@ export default function LexemeDetailResultComponent({
                   ) : (
                     <Button
                       size="sm"
-                      variant="outline" 
+                      variant="outline"
                       className="text-xs"
                       style={{
                         color: "#0645ad",
                         borderColor: "#0645ad",
-                        backgroundColor: "transparent"
+                        backgroundColor: "transparent",
                       }}
                       onMouseEnter={(e) => {
                         e.currentTarget.style.backgroundColor = "#f0f8ff";
@@ -111,7 +111,8 @@ export default function LexemeDetailResultComponent({
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = "transparent";
                       }}
-                      onClick={() => onContribute?.("label")}
+                      // onClick={() => onContribute?.("label")}
+                      onClick={() => alert("Coming soon")}
                     >
                       Contribute translation
                     </Button>
