@@ -51,7 +51,9 @@ build:
   needs:
     - build
   rules:
-    - !reference [build, rules]
+    - if: "$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH"
+      when: on_success
+    - when: never
   script:
     # Install necessary tools for secure file transfer and SSH
     - apk add --no-cache curl openssh-client rsync bash
@@ -61,8 +63,17 @@ build:
     - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
     - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh
     - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
+    # Connect to the server, clean the directory, and then deploy
+    - echo "Cleaning and deploying files to Toolforge..."
+    - |
+      ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" <<EOF
+      become $TOOLNAME
+      # This is the critical new step
+      rm -rf /data/project/$TOOLNAME/app/*
+      exit
+      exit
+      EOF
     # Deploy the application using rsync to synchronize files
-    - echo "Deploying files to Toolforge using rsync..."
     - rsync -avz --delete -e "ssh -i ~/.ssh/$PRIVATE_KEY_NAME" .next/standalone/ $SSH_USER@$SSH_HOST:/data/project/$TOOLNAME/app/
     # Restart the webservice on Toolforge
     - echo "Restarting service on Toolforge..."
