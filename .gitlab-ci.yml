@@ -52,7 +52,7 @@ build:
 # -------------------------------------------------
 ..deploy_template: &deploy_template
   # Use the same node image that the runner already trusts
-  image: alpine:latest
+  image: node:${NODE_VERSION}
   tags:
     - wmcs
   needs:
@@ -63,7 +63,15 @@ build:
     # -------------------------------------------------
     # 1️ Install the utilities we need (apt‑get)
     # -------------------------------------------------
-  - apk add --no-cache curl openssh-client git bash
+  - apt-get update -y
+  - apt-get install -y --no-install-recommends \
+      openssh-client \
+      rsync \
+      git \
+      bash \
+      curl \
+      ca-certificates \
+      && rm -rf /var/lib/apt/lists/*
 
     # -------------------------------------------------
     # 2️ SSH key handling (unchanged)
@@ -89,7 +97,7 @@ build:
   # -------------------------------------------------
   # 5️ Sync the built folder (rsync copies hidden files, too)
   # -------------------------------------------------
-  - echo "Syncing .next/standalone > repository"
+  - echo "Syncing .next/standalone → repository"
   - rsync -a --delete .next/standalone/ .   # copies *everything* inside the repo root
 
   # -------------------------------------------------
