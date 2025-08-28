@@ -1,20 +1,21 @@
 # -------------------------------------------------
-# GLOBAL settings
+# GLOBAL SETTINGS
 # -------------------------------------------------
 variables:
   NODE_VERSION: "22"
   YARN_CACHE_FOLDER: ".yarn-cache"
   NEXT_CACHE_FOLDER: ".next/cache"
-  TOOLNAME: "agpb"                     # set your Toolforge tool name once
+  TOOLNAME: "mytool"                     # <-- replace with your Toolforge tool name
   PRIVATE_KEY_NAME: "id_rsa.toolforge"
-  GITLAB_ACCESS_TOKEN: $GITLAB_ACCESS_TOKEN   # must have write_repository scope
+  # The access token must have the `write_repository` scope.
+  GITLAB_ACCESS_TOKEN: $GITLAB_ACCESS_TOKEN
 
 stages:
   - build
   - deploy
 
 # -------------------------------------------------
-# 1️ Build – produces .next/standalone/
+# 1️ BUILD – produces the .next/standalone/ artifact
 # -------------------------------------------------
 build:
   stage: build
@@ -24,9 +25,9 @@ build:
   rules:
     - if: '$CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH'
       when: on_success
-    - when: never          # everything else is ignored
+    - when: never                     # everything else is ignored
   cache:
-    # Invalidate on every commit (cheap because we have a fast runner)
+    # Invalidate the cache on every commit – cheap because the runner is fast.
     key: "${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHA}"
     paths:
       - node_modules/
@@ -37,6 +38,7 @@ build:
   script:
     - yarn install --frozen-lockfile
     - yarn build
+    # Build a self‑contained folder that can be copied as‑is
     - cp -r public .next/standalone/
     - cp -r .next/static .next/standalone/.next/
     - cp Procfile .next/standalone/
@@ -45,91 +47,99 @@ build:
     name: "next‑standalone"
     paths:
       - .next/standalone/
-    expire_in: 24 hour
+    expire_in: 24 hour                # long enough for manual retries
+  environment: build
+
 
 # -------------------------------------------------
-# 2️ Deploy template (now using the allowed node image)
+# 2️  DEPLOY TEMPLATE – runs on Alpine
 # -------------------------------------------------
-..deploy_template: &deploy_template
-  # Use the same node image that the runner already trusts
-  image: node:${NODE_VERSION}
+.deploy_template: &deploy_template
+  image: alpine:latest
   tags:
     - wmcs
   needs:
-    - build               # pull the .next/standalone artifact
+    - build                         # pulls the artifact automatically
   dependencies:
     - build
+  # Keep the same rules that the build job uses
+  rules:
+    - !reference [build, rules]
+
   script:
     # -------------------------------------------------
-    # 1️ Install the utilities we need (apt‑get)
+    # 1️Install the utilities we need (apk)
     # -------------------------------------------------
-  - apt-get update -y
-  - apt-get install -y --no-install-recommends \
-      openssh-client \
-      rsync \
-      git \
-      bash \
-      curl \
-      ca-certificates \
-      && rm -rf /var/lib/apt/lists/*
+    - apk add --no-cache \
+        openssh-client \
+        rsync \
+        git \
+        bash \
+        curl \
+        ca-certificates
 
     # -------------------------------------------------
-    # 2️ SSH key handling (unchanged)
+    # 2️ SSH key handling
     # -------------------------------------------------
-  - mkdir -p ~/.ssh
-  - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
-  - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
-  - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh/
-  - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
+    - mkdir -p ~/.ssh
+    - ssh-keyscan $SSH_HOST >> ~/.ssh/known_hosts
+    - curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" \
+        | bash
+    - mv $SECURE_FILES_DOWNLOAD_PATH/$PRIVATE_KEY_NAME ~/.ssh/
+    - chmod 600 ~/.ssh/$PRIVATE_KEY_NAME
 
-  # -------------------------------------------------
-  # 3️ Git configuration
-  # -------------------------------------------------
-  - git config --global user.email "gitlab-ci@$CI_SERVER_HOST"
-  - git config --global user.name "GitLab CI"
+    # -------------------------------------------------
+    # 3️ Git configuration
+    # -------------------------------------------------
+    - git config --global user.email "gitlab-ci@$CI_SERVER_HOST"
+    - git config --global user.name "GitLab CI"
 
-  # -------------------------------------------------
-  # 4️ Ensure the target branch exists (no fresh repo)
-  # -------------------------------------------------
-  - git fetch origin $BRANCH || true
-  - git checkout $BRANCH || git checkout -b $BRANCH
+    # -------------------------------------------------
+    # 4️ Make sure the target branch exists
+    # -------------------------------------------------
+    - git fetch origin $BRANCH || true
+    - git checkout $BRANCH || git checkout -b $BRANCH
 
-  # -------------------------------------------------
-  # 5️ Sync the built folder (rsync copies hidden files, too)
-  # -------------------------------------------------
-  - echo "Syncing .next/standalone → repository"
-  - rsync -a --delete .next/standalone/ .   # copies *everything* inside the repo root
+    # -------------------------------------------------
+    # 5️ Copy the built artefact into the repo
+    # -------------------------------------------------
+    - echo "Syncing .next/standalone → repository"
+    - rsync -a --delete .next/standalone/ .   # copies *everything* (including hidden files)
 
-  # -------------------------------------------------
-  # 6️Commit & push
-  # -------------------------------------------------
-  - git add -A
-  - git commit -m "Deploy $CI_COMMIT_SHORT_SHA – $CI_COMMIT_TITLE" || echo "nothing to commit"
-  - echo "Pushing to $BRANCH"
-  - git push origin $BRANCH --force
+    # -------------------------------------------------
+    # 6️ Commit & push (force‑push because we overwrite the whole tree)
+    # -------------------------------------------------
+    - git add -A
+    - |
+      git commit -m "Deploy $CI_COMMIT_SHORT_SHA – $CI_COMMIT_MESSAGE" \
+        || echo "nothing to commit (no changes)"
+    - echo "Pushing to $BRANCH"
+    - git push origin $BRANCH --force
 
-  # -------------------------------------------------
-  # 7️ Build a fresh Toolforge image – unique tag so the service can’t reuse old one
-  # -------------------------------------------------
-  - |
-    IMAGE_TAG="${BRANCH}-${CI_COMMIT_SHORT_SHA}"
-    echo "Building Toolforge image $IMAGE_TAG"
-    ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" <<'EOF'
-      become $TOOLNAME
-      toolforge build start --image-name "$IMAGE_TAG" \
-        -L https://$CI_SERVER_HOST/$CI_PROJECT_PATH \
-        --ref "$BRANCH"
-      toolforge webservice buildservice restart --mount all
-    EOF
+    # -------------------------------------------------
+    # 7️ Build a fresh Toolforge image – unique tag
+    # -------------------------------------------------
+    - |
+      IMAGE_TAG="${BRANCH}-${CI_COMMIT_SHORT_SHA}"
+      echo "Building Toolforge image $IMAGE_TAG"
+      ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" <<'EOF'
+        become $TOOLNAME
+        toolforge build start --image-name "$IMAGE_TAG" \
+          -L https://$CI_SERVER_HOST/$CI_PROJECT_PATH \
+          --ref "$BRANCH"
+        toolforge webservice buildservice restart --mount all
+      EOF
+
+
 # -------------------------------------------------
-# 3️ Deploy jobs
+# 3️ DEPLOY JOBS (dev / beta / production)
 # -------------------------------------------------
 .deploy_job:
   stage: deploy
   variables:
     SSH_HOST: "login.tools.wmflabs.org"
     SSH_USER: "collins"
-    ACCESS_TOKEN: $GITLAB_ACCESS_TOKEN
+    ACCESS_TOKEN: $GITLAB_ACCESS_TOKEN   # same token used for the git push
   <<: *deploy_template
 
 deploy-dev:
