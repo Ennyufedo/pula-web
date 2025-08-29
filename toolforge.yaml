@@ -1,5 +1,5 @@
 config_version: v1
-source_url: https://gitlab.wikimedia.org/toolforge-repos/agpb
+source_url: https://gitlab.wikimedia.org/toolforge-repos/sample-complex-app-backend/-/raw/main/toolforge.yaml
 components:
   frontend-service:
     build:
