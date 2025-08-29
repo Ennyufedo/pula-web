@@ -48,6 +48,8 @@ build:
 deploy-dev:
   stage: deploy
   environment: dev
+  dependencies:
+    - build
   needs:
     - build
   # rules:

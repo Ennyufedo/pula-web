@@ -1,0 +1,41 @@
+config_version: v1
+source_url: https://gitlab.wikimedia.org/toolforge-repos/agpb.git
+components:
+  cronjob:
+    build:
+      repository: https://gitlab.wikimedia.org/toolforge-repos/agpb.git
+      ref: build-dev
+    run:
+      command: cronjob
+      cpu: "2"
+      emails: none
+      filelog: false
+      memory: 2Gi
+      mount: all
+      retry: 0
+      schedule: "* * * * *"
+  frontend:
+    build:
+      repository: https://gitlab.wikimedia.org/toolforge-repos/agpb.git
+      ref: build-dev
+    run:
+      command: frontend
+      cpu: "2"
+      emails: none
+      filelog: false
+      memory: 2Gi
+      mount: none
+      port: 8000
+      replicas: 1
+  frontend-worker:
+    build:
+      repository: https://gitlab.wikimedia.org/toolforge-repos/agpb.git
+      ref: build-dev
+    run:
+      command: worker
+      cpu: "2"
+      emails: none
+      filelog: false
+      memory: 2Gi
+      mount: none
+      replicas: 1
