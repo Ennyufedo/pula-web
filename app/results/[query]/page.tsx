@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Header from "@/components/header";
 import Footer from "@/components/footer";
 import { Toaster } from "@/components/ui/toaster";
-import ResultsSearchInterface from "@/components/results-search-interface";
 import LexemeDetailResultComponent from "@/components/lexeme-detail-result";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useApiWithStore } from "@/hooks/useApiWithStore";
@@ -20,10 +19,11 @@ import {
 } from "@/lib/types/api";
 // import ContributeModal from "@/components/contribute-audio-modal";
 import ContributeAudioModal from "@/components/contribute-audio-modal";
-import ContributeLabelModal from "@/components/contribute-label-modal";
 import { useAuthStore } from "@/lib/stores";
 import GuessContribute from "@/components/guess-contribute";
 import Spinner from "@/components/spinner";
+import ContributeTranslationModal from "@/components/contribute-translation-modal";
+import ContributeDescriptionModal from "@/components/contribute-description-modal";
 
 export default function ResultsPage({
   params,
@@ -75,7 +75,7 @@ export default function ResultsPage({
   const [contributingLanguage, setContributingLanguage] =
     useState<Language | null>(null);
   const [contributingType, setContributingType] = useState<
-    "label" | "audio" | null
+    "description" | "audio" | "translation" | null
   >(null);
   const token = useAuthStore((state) => state.token);
   const hydrate = useAuthStore((state) => state.hydrate);
@@ -155,7 +155,7 @@ export default function ResultsPage({
   ]);
 
   const handleContribute = (
-    type: "label" | "audio",
+    type: "description" | "audio" | "translation" | null,
     language: Language | null
   ) => {
     if (!language) {
@@ -176,6 +176,7 @@ export default function ResultsPage({
       position: "top-right",
     });
     await getLexemeDetails();
+    await getLexemeTranslations();
   };
 
   return (
@@ -286,7 +287,7 @@ export default function ResultsPage({
                     selectedSourceLanguage?.lang_label || "Source Language"
                   }
                   onContribute={() =>
-                    handleContribute("label", selectedSourceLanguage)
+                    handleContribute("description", selectedSourceLanguage)
                   }
                 />
               </div>
@@ -333,7 +334,8 @@ export default function ResultsPage({
                         lexemeTranslations &&
                         lexemeTranslations.find(
                           (t: LexemeTranslation) =>
-                            t.trans_language === selectedTargetLanguage1?.lang_code
+                            t.trans_language ===
+                            selectedTargetLanguage1?.lang_code
                         )
                       }
                       title={selectedTargetLanguage1?.lang_label || "Target 1"}
@@ -351,7 +353,8 @@ export default function ResultsPage({
                         lexemeTranslations &&
                         lexemeTranslations.find(
                           (t: LexemeTranslation) =>
-                            t.trans_language === selectedTargetLanguage2?.lang_code
+                            t.trans_language ===
+                            selectedTargetLanguage2?.lang_code
                         )
                       }
                       onContribute={(type) =>
@@ -390,8 +393,15 @@ export default function ResultsPage({
             language={contributingLanguage}
             onSuccess={onContributeSuccess}
           />
-          <ContributeLabelModal
-            open={contributingType === "label" && open ? true : false}
+          <ContributeDescriptionModal
+            open={contributingType === "description" && open ? true : false}
+            onOpenChange={setOpen}
+            language={contributingLanguage}
+            onSuccess={onContributeSuccess}
+          />
+          <ContributeTranslationModal
+            open={contributingType === "translation" && open ? true : false}
+            lexemeTranslations={lexemeTranslations}
             onOpenChange={setOpen}
             language={contributingLanguage}
             onSuccess={onContributeSuccess}

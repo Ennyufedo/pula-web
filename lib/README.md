@@ -60,7 +60,7 @@ import { api } from '@/lib/api';
 
 // Same methods as above, but shorter syntax
 const languages = await api.getLanguages();
-const results = await api.searchLexemes({ ismatch: 0, search: "ma", src_lang: "en" });
+const results = await api.searchLexemes({ ismatch: 0, search: "ma", src_lang: "en", with_sense: false });
 const details = await api.getLexemeDetails({ id: "L3625", lang_1: "de", lang_2: "fr", src_lang: "en" });
 ```
 
