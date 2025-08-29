@@ -87,7 +87,7 @@ build:
     - |
       ssh -i "~/.ssh/$PRIVATE_KEY_NAME" "$SSH_USER@$SSH_HOST" <<EOF
       become $TOOLNAME
-      toolforge build start -L https://$CI_SERVER_HOST/$CI_PROJECT_PATH --ref "$BRANCH"
+      toolforge build start --image-name "$BRANCH" -L https://$CI_SERVER_HOST/$CI_PROJECT_PATH --ref "$BRANCH"
       toolforge webservice buildservice restart --mount all
       exit
       exit
@@ -134,6 +134,7 @@ deploy-dev:
     NODE_ENV: "development"
 
   <<: *deploy_template
+
 deploy-beta:
   stage: deploy
   environment: beta
@@ -146,6 +147,7 @@ deploy-beta:
     SECURE_FILES_DOWNLOAD_PATH: .
     PRIVATE_KEY_NAME: "id_rsa.toolforge"
     NODE_ENV: "beta"
+
   <<: *deploy_template
 
 deploy-production:
