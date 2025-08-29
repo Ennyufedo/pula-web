@@ -168,7 +168,7 @@ class ApiClient {
    */
   async addTranslation(request: AddTranslationRequest[]): Promise<void> {
     try {
-      await this.client.post('/lexemes/translations/add', request);
+      await this.client.post('/lexemes/translation/add', request);
     } catch (error) {
       checkIf401Error(error as ApiError);
       throw error as ApiError;

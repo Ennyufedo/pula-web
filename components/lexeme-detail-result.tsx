@@ -13,7 +13,7 @@ interface LexemeDetailResultProps {
   glossesWithSense?: GlossWithSense[];
   lexemeDetail?: LexemeDetail;
   translation?: LexemeTranslation | null;
-  onContribute?: (type: "label" | "audio" | "translation") => void;
+  onContribute?: (type: "description" | "audio" | "translation") => void;
 }
 
 export default function LexemeDetailResultComponent({
@@ -184,7 +184,7 @@ export default function LexemeDetailResultComponent({
                             e.currentTarget.style.backgroundColor =
                               "transparent";
                           }}
-                          onClick={() => onContribute?.("label")}
+                          onClick={() => onContribute?.("description")}
                         >
                           Add Description
                         </Button>

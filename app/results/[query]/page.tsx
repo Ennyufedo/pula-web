@@ -19,11 +19,11 @@ import {
 } from "@/lib/types/api";
 // import ContributeModal from "@/components/contribute-audio-modal";
 import ContributeAudioModal from "@/components/contribute-audio-modal";
-import ContributeLabelModal from "@/components/contribute-label-modal";
 import { useAuthStore } from "@/lib/stores";
 import GuessContribute from "@/components/guess-contribute";
 import Spinner from "@/components/spinner";
 import ContributeTranslationModal from "@/components/contribute-translation-modal";
+import ContributeDescriptionModal from "@/components/contribute-description-modal";
 
 export default function ResultsPage({
   params,
@@ -75,7 +75,7 @@ export default function ResultsPage({
   const [contributingLanguage, setContributingLanguage] =
     useState<Language | null>(null);
   const [contributingType, setContributingType] = useState<
-    "label" | "audio" | "translation" | null
+    "description" | "audio" | "translation" | null
   >(null);
   const token = useAuthStore((state) => state.token);
   const hydrate = useAuthStore((state) => state.hydrate);
@@ -155,7 +155,7 @@ export default function ResultsPage({
   ]);
 
   const handleContribute = (
-    type: "label" | "audio" | "translation" | null,
+    type: "description" | "audio" | "translation" | null,
     language: Language | null
   ) => {
     if (!language) {
@@ -176,6 +176,7 @@ export default function ResultsPage({
       position: "top-right",
     });
     await getLexemeDetails();
+    await getLexemeTranslations();
   };
 
   return (
@@ -286,7 +287,7 @@ export default function ResultsPage({
                     selectedSourceLanguage?.lang_label || "Source Language"
                   }
                   onContribute={() =>
-                    handleContribute("label", selectedSourceLanguage)
+                    handleContribute("description", selectedSourceLanguage)
                   }
                 />
               </div>
@@ -392,14 +393,15 @@ export default function ResultsPage({
             language={contributingLanguage}
             onSuccess={onContributeSuccess}
           />
-          <ContributeLabelModal
-            open={contributingType === "label" && open ? true : false}
+          <ContributeDescriptionModal
+            open={contributingType === "description" && open ? true : false}
             onOpenChange={setOpen}
             language={contributingLanguage}
             onSuccess={onContributeSuccess}
           />
           <ContributeTranslationModal
             open={contributingType === "translation" && open ? true : false}
+            lexemeTranslations={lexemeTranslations}
             onOpenChange={setOpen}
             language={contributingLanguage}
             onSuccess={onContributeSuccess}

@@ -10,6 +10,7 @@ export interface LexemeSearchRequest {
   ismatch: number;
   search: string;
   src_lang: string;
+  with_sense: boolean
 }
 
 export interface LexemeSearchResult {
@@ -17,6 +18,7 @@ export interface LexemeSearchResult {
   label: string;
   language: string;
   description: string;
+  sense_id?: string;
 }
 
 export interface LexemeDetailRequest {
@@ -68,17 +70,18 @@ export interface ApiError {
 
 export interface AddDescriptionRequest {
   lexeme_id: string;
-  lexeme_sense_id: string;
-  translation_language: string;
-  translation_value: string;
-  is_new: boolean;
-  categoryId: string;
+  sense_id: string;
+  language: string;
+  value: string;
+  // is_new: boolean;
+  // categoryId: string;
 }
 
 export interface AddTranslationRequest {
   categoryId: string;
   is_new: boolean;
-  lexeme_id: string;
+  // lexeme_id: string;
+  base_lexeme: string;
   translation_language: string;
   translation_sense_id: string;
   value: string;
