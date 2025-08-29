@@ -8,7 +8,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AddLabeledTranslationRequest, Language, LexemeSearchRequest, LexemeSearchResult } from "@/lib/types/api";
+import {
+  AddTranslationRequest,
+  Language,
+  LexemeSearchRequest,
+  LexemeSearchResult,
+  LexemeTranslation,
+} from "@/lib/types/api";
 import { useEffect, useState } from "react";
 import { useApiWithStore } from "@/hooks/useApiWithStore";
 import { api } from "@/lib/api";
@@ -19,32 +25,50 @@ interface ContributeModalProps {
   onOpenChange: (open: boolean) => void;
   language: Language | null;
   onSuccess?: () => void;
+  lexemeTranslations: LexemeTranslation[] | null;
 }
 
-export default function ContributeLabelModal({
+export default function ContributeTranslationModal({
   open,
   onOpenChange,
   language,
   onSuccess,
+  lexemeTranslations,
 }: ContributeModalProps) {
   const [query, setQuery] = useState("");
   const [lexemes, setLexemes] = useState<LexemeSearchResult[]>([]);
   const [hasSelectedLexeme, setHasSelectedLexeme] = useState(false);
+  const [selectedSenseId, setSelectedSenseId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const { selectedLexeme, addLabeledTranslation } = useApiWithStore();
+  const { selectedLexeme, addTranslation } = useApiWithStore();
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
+    // console.log("selectedLexeme", selectedLexeme);
+    // console.log("lexemeTranslations", lexemeTranslations);
+    // console.log("language", language);
+    const baseLexeme =
+      lexemeTranslations?.find((t) => t.trans_language === language?.lang_code)
+        ?.base_lexeme || "";
+    if (!selectedSenseId || !baseLexeme) {
+      alert("Please select a sense and a base lexeme");
+      return;
+    }
+
     try {
-      const request: AddLabeledTranslationRequest[] = [{
-        lexeme_id: selectedLexeme?.lexeme?.id || "",
-        lexeme_sense_id: selectedLexeme?.glosses[0]?.senseId || "",
-        translation_language: language?.lang_code || "",
-        translation_value: query,
-        is_new: !hasSelectedLexeme,
-        categoryId: selectedLexeme?.lexeme?.lexicalCategoryId || "",
-      }];
-      await addLabeledTranslation(request);
+      const request: AddTranslationRequest[] = [
+        {
+          base_lexeme: baseLexeme,
+          translation_sense_id: selectedSenseId,
+          translation_language: language?.lang_code || "",
+          value: query,
+          is_new: !hasSelectedLexeme,
+          categoryId: selectedLexeme?.lexeme?.lexicalCategoryId || "",
+        },
+      ];
+      console.log("request", request);
+      // return;
+      setIsSubmitting(true);
+      await addTranslation(request);
       onSuccess?.();
       onOpenChange(false);
     } catch (error) {
@@ -58,11 +82,12 @@ export default function ContributeLabelModal({
     if (!language || !language.lang_code) {
       return;
     }
-    
+
     const request: LexemeSearchRequest = {
       ismatch: 1,
       search: query,
       src_lang: language?.lang_code || "",
+      with_sense: true,
     };
     const results = await api.searchLexemes(request);
     setLexemes(results);
@@ -77,9 +102,9 @@ export default function ContributeLabelModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Label Contribution</DialogTitle>
+          <DialogTitle>Translation Contribution</DialogTitle>
           <DialogDescription>
-            Add a label to help improve our translations for{" "}
+            Add a translation to help improve our translations for{" "}
             {language ? language.lang_label : "the language"}.
           </DialogDescription>
         </DialogHeader>
@@ -98,17 +123,19 @@ export default function ContributeLabelModal({
                 color: "#222222",
                 cursor: "text",
               }}
-              onFocusCapture={(e) => (e.currentTarget.style.borderColor = "#0645ad")}
+              onFocusCapture={(e) =>
+                (e.currentTarget.style.borderColor = "#0645ad")
+              }
               onBlur={(e) => (e.currentTarget.style.borderColor = "#a2a9b1")}
             />
           </div>
 
           {lexemes.length > 0 && !hasSelectedLexeme && (
-            <div 
+            <div
               className="w-full bg-white rounded-lg shadow-lg overflow-auto"
-              style={{ 
+              style={{
                 border: `1px solid #a2a9b1`,
-                maxHeight: "160px"
+                maxHeight: "160px",
               }}
             >
               {lexemes.map((lexeme) => (
@@ -118,13 +145,18 @@ export default function ContributeLabelModal({
                   onClick={() => {
                     setQuery(lexeme.label);
                     setHasSelectedLexeme(true);
+                    setSelectedSenseId(lexeme.sense_id || null);
                   }}
                   className="w-full text-left px-4 py-3 text-sm focus:outline-none flex items-center space-x-3 transition-colors"
                   style={{
                     color: "#222222",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8f9fa")}
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#f8f9fa")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
                 >
                   <div className="flex-1">
                     <div className="font-medium">{lexeme.label}</div>
@@ -138,17 +170,23 @@ export default function ContributeLabelModal({
           )}
 
           {lexemes.length === 0 && query && (
-            <div className="text-red-500 text-sm">
-              Lexeme does not exist
-            </div>
+            <div className="text-red-500 text-sm">Lexeme does not exist</div>
           )}
 
           <div className="flex justify-end space-x-2">
-            <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button onClick={handleSubmit} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : (hasSelectedLexeme ? "Save existing label" : "Save new label")}
+              {isSubmitting
+                ? "Saving..."
+                : hasSelectedLexeme
+                ? "Save existing translation"
+                : "Save new translation"}
               <Spinner loading={isSubmitting} />
             </Button>
           </div>

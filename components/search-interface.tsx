@@ -112,10 +112,8 @@ export default function SearchInterface() {
       <div className="mb-8">
         <SearchInput
           disabled={!areLanguagesSelected}
-          // onSearch={handleSearch}
-          onSearch={(v) => null}
+          onSearch={handleSearch}
           value={""}
-          // onChange={setSearchQuery}
           onChange={(v) => null}
         />
       </div>
