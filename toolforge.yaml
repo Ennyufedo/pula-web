@@ -1,4 +1,4 @@
-config_version: v1
+config_version: v1beta1
 source_url: https://gitlab.wikimedia.org/toolforge-repos/agpb/-/raw/main/toolforge.yaml
 components:
   frontend-service:
