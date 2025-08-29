@@ -1,7 +1,8 @@
 config_version: v1
-source_url: https://gitlab.wikimedia.org/toolforge-repos/sample-complex-app-backend/-/raw/main/toolforge.yaml
+source_url: https://gitlab.wikimedia.org/toolforge-repos/agpb/-/raw/main/toolforge.yaml
 components:
   frontend-service:
+    component_type: continuous
     build:
       repository: https://gitlab.wikimedia.org/toolforge-repos/agpb
       ref: build-dev
