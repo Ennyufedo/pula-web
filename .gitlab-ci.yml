@@ -27,10 +27,6 @@ build:
 # Deploy template for Toolforge
 .deploy_template: &deploy_template
   image: alpine:latest
-  needs:
-    - build
-  # rules:
-  #   - !reference [build, rules]
   script:
     - apk add --no-cache curl openssh-client bash
     - mkdir -p ~/.ssh
@@ -52,6 +48,10 @@ build:
 deploy-dev:
   stage: deploy
   environment: dev
+  needs:
+    - build
+  # rules:
+  #   - !reference [build, rules]
   variables:
     SSH_HOST: "login.tools.wmflabs.org"
     SSH_USER: "collins"
