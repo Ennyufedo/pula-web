@@ -61,12 +61,14 @@ export default function LexemeDetailResultComponent({
 
           {/* Lexeme Info */}
           <div>
-            <h4
-              className="text-md font-medium mb-2"
-              style={{ color: "#222222" }}
-            >
-              {lexemeDetail.id}
-            </h4>
+            {token && (
+              <h4
+                className="text-md font-medium mb-2"
+                style={{ color: "#222222" }}
+              >
+                {lexemeDetail.id}
+              </h4>
+            )}
             <p className="text-sm" style={{ color: "#72777d" }}>
               Category:{" "}
               <a
@@ -93,8 +95,8 @@ export default function LexemeDetailResultComponent({
         {/* Translation */}
         {translation && (
           <div className="pb-4 pt-4">
-            <p className="text-sm border-b border-gray-200 mb-5">
-              Translation:
+            <p className="text-sm border-b border-gray-200 mb-5 font-semibold">
+              Translation
             </p>
             <div className="">
               <div className="flex">
@@ -151,7 +153,7 @@ export default function LexemeDetailResultComponent({
         )}
 
         <div>
-          <p className="text-sm border-b border-gray-200 pt-4 mb-4">
+          <p className="text-sm border-b border-gray-200 pt-4 mb-4 font-semibold">
             Descriptions
           </p>
           {glossesWithSense &&
@@ -227,7 +229,10 @@ export default function LexemeDetailResultComponent({
                 </div>
 
                 {/* Audio section at bottom */}
-                <div className="mt-3 pt-3 bordder-t border-gray-200">
+                <p className="text-sm border-b border-gray-200 pt-4 mb-4 font-semibold mt-3">
+                  Audios & Sounds
+                </p>
+                <div className="bordder-t border-gray-200">
                   {glossWithSense.gloss.audio ? (
                     <audio
                       controls
@@ -241,25 +246,28 @@ export default function LexemeDetailResultComponent({
                       Your browser does not support the audio element.
                     </audio>
                   ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="text-xs"
-                      style={{
-                        color: "#0645ad",
-                        borderColor: "#0645ad",
-                        backgroundColor: "transparent",
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = "#f0f8ff";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = "transparent";
-                      }}
-                      onClick={() => onContribute?.("audio")}
-                    >
-                      Add audio
-                    </Button>
+                    <>
+                      <p className="text-xs pb-1 italic">No audio found.</p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-xs"
+                        style={{
+                          color: "#0645ad",
+                          borderColor: "#0645ad",
+                          backgroundColor: "transparent",
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = "#f0f8ff";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = "transparent";
+                        }}
+                        onClick={() => onContribute?.("audio")}
+                      >
+                        Contribute audio translation
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>
